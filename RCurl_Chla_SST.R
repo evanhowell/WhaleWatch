@@ -1,3 +1,5 @@
+#This file installs the variables SST and Chla from ERDDAP
+
 #Install and load libraries
 is.installed <- function(x){
     is.element(x, installed.packages()[,1])
