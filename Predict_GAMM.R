@@ -1,3 +1,5 @@
+#This file runs predictions from GAMM models, averaging the results. The mean and SD are then written into a .csv file, as well as .txt files for GMT to read for plotting.
+
 if (!is.installed("mgcv")){
     install.packages("mgcv")
   }
@@ -6,10 +8,10 @@ library(mgcv)
 
 #Run all GAMs to average
 
-factors = read.csv("WhaleWatchFactors.csv")
+factors = read.csv(sprintf("WhaleWatchFactors_%s_%s.csv",month,year))
 
 wwvector = vector('list')
-files = paste("bwhaleGAMM_reduced",1:40,".RData",sep="")
+files = paste("bwhaleGAMM",1:40,".RData",sep="")
 for(i in files){
 	load(i)
 	wwvector[[i]] = predict.gam(bwhaleGAMM$gam,get("factors"),se=TRUE, type="response")
@@ -28,8 +30,8 @@ predict$percent = predict$fitmean*100
 write.csv(predict,sprintf("WhaleWatchPredictions_%s_%s.csv",month,year))
 
 #Create text files for GMT  
-fitxyz = data.frame(predict[2],predict[1],predict[8])
-sdxyz = data.frame(predict[2],predict[1],predict[7])
+fitxyz = data.frame(predict["lon"],predict["lat"],predict["percent"])
+sdxyz = data.frame(predict["lon"],predict["lat"],predict["sd"])
 write.table(fitxyz,"fit.txt",col.names=FALSE,row.names=F,quote=FALSE) #must have no headers, no row names, no quotes
 write.table(sdxyz,"sd.txt",col.names=FALSE,row.names=F,quote=FALSE)
 
