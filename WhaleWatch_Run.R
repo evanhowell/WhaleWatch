@@ -14,6 +14,6 @@ if (file.exists("bathy.txt")){
 	source('bathymetry_grdfilter.R')
 }
 
-source('RCurl_Chla_SST.R',print.eval=TRUE)
+source('Environmental_Variables_Extract.R',print.eval=TRUE)
 source('Predict_GAMM.R',print.eval=TRUE)
 source('Plot_FitMean_GMT.R',print.eval=TRUE)
