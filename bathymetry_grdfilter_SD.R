@@ -36,7 +36,7 @@ depth = read.table("depth.xyz")
 depth$V3[depth$V3>=0] = NaN
 write.table(depth,"depthnan.xyz",row.names=FALSE,col.names=FALSE)
 
-#Filter bathymetry to the desired cell size, 0.25km
+#Filter bathymetry to the desired cell size, 0.25deg
 gmt.system("xyz2grd depthnan.xyz -Rd-135/-115/30/49 -I0.008333333 -Gdepth.grd")
 gmt.system("grdfilter depth.grd -D0 -Fm0.5 -Rd-135/-115/30/49 -I0.25/0.25 -Gdepth_grdfilter_a.grd") #using a median filter
 
