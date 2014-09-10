@@ -9,9 +9,13 @@ if (!is.installed("ncdf")){
 if (!is.installed("RCurl")){
     install.packages("RCurl")
   }
+if (!is.installed("gmt")){
+	install.packages("gmt")
+  }
 
 library(ncdf)
 library(RCurl)
+library(gmt)
 
 #Download chl and change dataframe format for GMT to regrid chlorophyll to match SST
 f = CFILE("chl.nc",mode="wb")
@@ -69,7 +73,7 @@ gmt.system('grd2xyz chlgridded_grdfilter.grd',file="chl.xyz",append=F)
 gmt.system("grdfilter sst.nc?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsstgridded_grdfilter.grd") #using a median filter. 
 gmt.system('grd2xyz sstgridded_grdfilter.grd',file="sst.xyz",append=F)
 
-gmt.system("grdfilter ssh.nc?ssh -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshgridded_grdfilter.grd") #using a median filter. 
+gmt.system("grdfilter ssha.nc?ssh -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshgridded_grdfilter.grd") #using a median filter. 
 gmt.system('grd2xyz sshgridded_grdfilter.grd',file="ssh.xyz",append=F)
 
 gmt.system("grdfilter ugeo.nc?u_current -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gugeogridded_grdfilter.grd") #using a median filter. 
@@ -79,14 +83,26 @@ gmt.system("grdfilter vgeo.nc?v_current -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25
 gmt.system('grd2xyz vgeogridded_grdfilter.grd',file="vgeo.xyz",append=F)
 
 #Calculate SD for SSH
-gmt.system("blockmean ssh.xyz -Es -Rd-135/-115/30/49 -I0.25/0.25", file="sshrms_blockmean.xyz")
-sd = read.table("sshrms_blockmean.xyz")
-sd = data.frame(c(sd[1],sd[2],sd[4]))
-write.table(sd,"sd_blockmean.xyz",row.names=FALSE,col.names=FALSE)
-gmt.system("xyz2grd sd_blockmean.xyz -Rd-135/-115/30/49 -I0.25/0.25 -Gsd_blockmean.grd")
-gmt.system("grdmath sd_blockmean.grd mask.grd OR = sd_blockmean_masked.grd")
-gmt.system("grd2xyz sd_blockmean_masked.grd", file="sshrms.xyz")
+gmt.system("blockmean ssh.xyz -Es -R225/245/30/49 -I1/1", file="sshrms_blockmean_1deg.xyz") #blockmedian at 1deg, calculate SD on 1x1deg boxes
 
+# Now you SHOULD be able to select columns in GMT with -i1,2,4 but this will NOT work. Irritating. If you figure it out let me know.
+#gmt.system("xyz2grd sshrms_blockmean_1deg.xyz -R225/245/30/49 -i1,2,4 -I1/1 -Gsshrms_blockmean_1deg.grd") #turn into GMT grd file
+
+sshrms = read.table("sshrms_blockmean_1deg.xyz")
+sshrms = data.frame(c(sd[1],sd[2],sd[4]))
+write.table(sd,"sshrms_blockmean_1deg_fromR.xyz",row.names=FALSE,col.names=FALSE)
+
+gmt.system("xyz2grd sshrms_blockmean_1deg_fromR.xyz -R225/245/30/49 -I1/1 -Gsshrms_blockmean_1deg.grd")
+gmt.system("grdsample sshrms_blockmean_1deg.grd -I0.25/0.25 -Gsshrms_sampled.grd") #resample to 0.25x0.25deg boxes
+gmt.system("grd2xyz sshrms_sampled.grd", file="sshrms.xyz")
+
+# To plot and verify run these in terminal
+
+# makecpt -Cjet -T-0.1/0.1/0.01 -Z > sshres.cpt
+# grdimage sshrms_blockmean_1deg.grd -R225/245/30/49 -Csshres.cpt -Bf2a2/f2a2WeSn -Jm0.2 > temp.ps # Original 1x1 deg sd
+# grdimage sshrms_sampled.grd -R225/245/30/49 -Csshres.cpt -Bf2a2/f2a2WeSn -Jm0.2 > tempsmooth.ps #resampled 0.25x0.25 deg boxes
+
+sshrms = read.table("sshrms.xyz")
 
 #Combine sst, chl, bathy into one file
 sst = read.table("sst.xyz")
