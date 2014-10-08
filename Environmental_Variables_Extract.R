@@ -52,12 +52,24 @@ close(f)
 #curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAsshmday.nc?sshd[(2009-12-16T00:00:00Z):1:(2009-12-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
 #close(f)
 
+#Gridded at 0.25 so no regridding done
+#f = CFILE("ugeo.nc",mode="wb") 
+#curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?u_current[(2009-06-16T00:00:00Z):1:(2009-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+#close(f)
+
+#Gridded at 0.25 so no regridding done
+#f = CFILE("vgeo.nc",mode="wb") 
+#curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?v_current[(2009-06-16T00:00:00Z):1:(2009-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+#close(f)
+
 #Run a check for the same time frame. Every file should be the same month.
 sstnc = open.ncdf("sst.nc",write=FALSE)
 chlnc = open.ncdf("chl.nc",write=FALSE)
 windnc = open.ncdf("wind.nc",write=FALSE)
 #ekenc = open.ncdf("eke.nc",write=FALSE)
 #sshdnc = open.ncdf("sshd.nc",write=FALSE)
+ugeonc = open.ncdf("ugeo.nc", write=FALSE) # Added by EAH for u component
+vgeonc = open.ncdf("vgeo.nc", write=FALSE) # Added by EAH for v component
 
 if((att.get.ncdf(sstnc,0,"time_coverage_start")$value == att.get.ncdf(chlnc,0,"time_coverage_start")$value) && (att.get.ncdf(sstnc,0,"time_coverage_start")$value == att.get.ncdf(windnc,0,"time_coverage_start")$value)){
 	print("Same time period")
