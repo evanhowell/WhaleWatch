@@ -22,52 +22,81 @@ library(ncdf)
 library(gmt)
 library(RCurl)
 
+daterange<-"(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)"
+startyr<-substring(daterange,2,5)
+endyr<-substring(daterange,27,30)
+
 #Download chl and change dataframe format for GMT to regrid chlorophyll to match SST
 #Use [(last)] when obtaining real-time data from ERDDAP, e.g. [(2014-08-16T00:00:00Z):1:(2014-08-16T00:00:00Z)] = [(last)]
 f = CFILE("chl.nc",mode="wb")
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(2009-12-16T00:00:00Z):1:(2009-12-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+close(f)
+
+f = CFILE("swchl.nc",mode="wb")
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdSWchla8day.nc?chlorophyll[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+close(f)
+
+f = CFILE("vichl.nc",mode="wb")
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdVHchla8day.nc?chlorophyll[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
 close(f)
 
 #Download SST and change dataframe format for GMT to regrid 
 f = CFILE("sst.nc",mode="wb")
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(2009-12-16T00:00:00Z):1:(2009-12-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+close(f)
+
+f = CFILE("sstGHRSST.nc",mode="wb")
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/jplG1SST.nc?sst[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+close(f)
+
+f = CFILE("sstpath.nc",mode="wb")
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdPHssta8day.nc?sst[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+close(f)
+
+f = CFILE("sstOI.nc",mode="wb")
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/ncdcOisst2Agg.nc?sst[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
 close(f)
 
 #Download wind and change dataframe format for GMT to regrid to match other variables
-f = CFILE("qswind.nc",mode="wb") #for older files
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdQSwindmday.nc?y_wind[(2009-12-16T12:00:00Z):1:(2009-12-16T12:00:00Z)][(10.0):1:(10.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+
+f = CFILE("qwind.nc",mode="wb") #for older files
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdQSwindmday.nc?y_wind[(2008-06-16T16:00:00Z):1:(2008-06-16T16:00:00Z)][(10.0):1:(10.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
 close(f)
 f = CFILE("qawind.nc",mode="wb") #for new files
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdQAwindmday.nc?y_wind[(2009-12-16T12:00:00Z):1:(2009-12-16T12:00:00Z)][(10.0):1:(10.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdQAwindmday.nc?y_wind[(2008-06-16T16:00:00Z):1:(2008-06-16T16:00:00Z)][(10.0):1:(10.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
 close(f)
 
 #Download Ekman Upwelling and change dataframe format for GMT to regrid the same way to match other variables
 #Out of date
 f = CFILE("ekm.nc",mode="wb") 
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdQAstressmday.nc?upwelling[(2009-12-16T00:00:00Z):1:(2009-12-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdQSstressmday.nc?upwelling[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
 close(f)
+f = CFILE("ekma.nc",mode="wb") 
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdQAstressmday.nc?upwelling[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) 
+close(f)
+}
 
 #Download SSH deviation and change dataframe format for GMT to regrid the same way to match other variables
 #Out of date. Need to update source.
 #Gridded at 0.25 so no regridding done
 f = CFILE("sshd.nc",mode="wb") 
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAsshmday.nc?sshd[(2009-12-16T00:00:00Z):1:(2009-12-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAsshmday.nc?sshd[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
 close(f)
 
 #Gridded at 0.25 so no regridding done
 f = CFILE("ugeo.nc",mode="wb") 
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?u_current[(2009-06-16T00:00:00Z):1:(2009-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?u_current[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
 close(f)
 
 #Gridded at 0.25 so no regridding done
 f = CFILE("vgeo.nc",mode="wb") 
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?v_current[(2009-06-16T00:00:00Z):1:(2009-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?v_current[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
 close(f)
 
 #Run a check for the same time frame. Every file should be the same month.
 sstnc = open.ncdf("sst.nc",write=FALSE)
 chlnc = open.ncdf("chl.nc",write=FALSE)
-windnc = open.ncdf("qawind.nc",write=FALSE)
+windnc = open.ncdf("qwind.nc",write=FALSE)
 ekmnc = open.ncdf("ekm.nc",write=FALSE)
 sshdnc = open.ncdf("sshd.nc",write=FALSE)
 ugeonc = open.ncdf("ugeo.nc", write=FALSE) # Added by EAH for u component
@@ -107,11 +136,14 @@ gmt.system("grdfilter sst.nc?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsstg
 gmt.system('grd2xyz sstgridded_grdfilter.grd',file="sst.xyz",append=F)
 
 #Wind is at 0.25  
+gmt.system('grd2xyz qswind.nc?y_wind',file="wind.xyz",append=F)
 gmt.system('grd2xyz qawind.nc?y_wind',file="wind.xyz",append=F)
 #gmt.system("grdfilter wind.nc?y_wind -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gwindgridded_grdfilter.grd") #using a median filter. 
 #gmt.system('grd2xyz windgridded_grdfilter.grd',file="wind.xyz",append=F)
 
-gmt.system("grdfilter ekm.nc?upwelling -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gekmgridded_grdfilter.grd") #using a median filter. 
+gmt.system("grdfilter ekms.nc?upwelling -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gekmgridded_grdfilter.grd") #using a median filter. 
+gmt.system('grd2xyz ekmgridded_grdfilter.grd',file="ekm.xyz",append=F)
+gmt.system("grdfilter ekma.nc?upwelling -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gekmgridded_grdfilter.grd") #using a median filter. 
 gmt.system('grd2xyz ekmgridded_grdfilter.grd',file="ekm.xyz",append=F)
 
 #Want to get SSH deviation
@@ -131,7 +163,7 @@ sst = read.table("sst.xyz")
 chl = read.table("chl.xyz")
 wind = read.table("wind.xyz")
 bathy = read.table("bathy.txt")
-bathyrms = read.table("bathyrms.txt")
+#bathyrms = read.table("bathyrms.txt")
 ekm = read.table("ekm.xyz")
 sshd = read.table("sshd.xyz")
 ugeo = read.table("ugeo.xyz")
