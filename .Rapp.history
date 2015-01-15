@@ -1,0 +1,39 @@
+library(ncdf)library(RCurl)
+f = CFILE("chl.nc",mode="wb")curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(last)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) close(f)
+f = CFILE("ssha.nc",mode="wb")curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAssh1day.nc?ssh[(last)][(0.0):1:(0.0)][(30):1:(49)][(225):1:(245)]",writedata=f@ref) close(f)
+ssha = open.ncdf("ssha.nc",write=FALSE)
+gmt.system("grdfilter ssh.nc?ssh -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshgridded_grdfilter.grd") #using a median filter.
+library(gmt)
+gmt.system("grdfilter ssh.nc?ssh -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshgridded_grdfilter.grd") #using a median filter.
+gmt.system("grdfilter ssha.nc?ssh -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshgridded_grdfilter.grd") #using a median filter.
+gmt.system('grd2xyz sshgridded_grdfilter.grd',file="ssh.xyz",append=F)
+gmt.system("blockmean ssh.xyz -Es -Rd-135/-115/30/49 -I0.25/0.25", file="sshrms_blockmean.xyz")
+sd = read.table("sshrms_blockmean.xyz")
+sd = data.frame(c(sd[1],sd[2],sd[4]))
+summary(sd)
+sd = read.table("sshrms_blockmean.xyz")
+summary(sd)
+gmt.system("blockmean ssh.xyz -Es -R225/245/30/49 -I1/1", file="sshrms_blockmean_1deg.xyz")
+gmt.system("grdfilter ssha.nc?ssh -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshgridded_grdfilter.grd") #using a median filter. gmt.system('grd2xyz sshgridded_grdfilter.grd',file="ssh.xyz",append=F)
+gmt.system("blockmean ssh.xyz -Es -R225/245/30/49 -I1/1", file="sshrms_blockmean_1deg.xyz") #blockmedian at 1deg, calculate SD on 1x1deg boxes
+gmt.system("xyz2grd sshrms_blockmean_1deg.xyz -R225/245/30/49 -I1/1 -Gsshrms_blockmean_1deg.grd") #turn into GMT grd file
+gmt.system("grdsample sshrms_blockmean_1deg.grd -I0.25/0.25 -Gsshrms_sampled.grd") #resample to 0.25x0.25deg boxes
+gmt.system("grd2xyz sshrms_sampled.grd", file="sshrms.xyz")
+sd = read.table("sshrms.xyz")
+summary(sd)
+sd = read.table("sshrms_blockmean_1deg.xyz")
+summary(sd)
+sd = data.frame(c(sd[1],sd[2],sd[4]))
+summary(sd)
+gmt.system("blockmean ssh.xyz -Es -R225/245/30/49 -I1/1", file="sshrms_blockmean_1deg.xyz") #blockmedian at 1deg, calculate SD on 1x1deg boxes
+sd = read.table("sshrms_blockmean_1deg.xyz")sd = data.frame(c(sd[1],sd[2],sd[4]))write.table(sd,"sshrms_blockmean_1deg_fromR.xyz",row.names=FALSE,col.names=FALSE)
+gmt.system("xyz2grd sshrms_blockmean_1deg_fromR.xyz -R225/245/30/49 -I1/1 -Gsshrms_blockmean_1deg.grd")
+gmt.system("grdsample sshrms_blockmean_1deg.grd -I0.25/0.25 -Gsshrms_sampled.grd") #resample to 0.25x0.25deg boxesgmt.system("grd2xyz sshrms_sampled.grd", file="sshrms.xyz")
+sd = read.table("sshrms.xyz")
+summary(sd)
+sshrms = read.table("sshrms.xyz")
+summary(sshrms)
+rm(sd)
+sd
+colnames(sshrms) = c("longitude","latitude","sshrms")
+q()
