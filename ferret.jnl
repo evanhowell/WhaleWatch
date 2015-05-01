@@ -1,6 +1,23 @@
  ! NOAA/PMEL TMAP
  ! FERRET v6.82  
  ! Darwin 9.8.0 - 08/06/12
- ! 31-Jul-14 07:56     
+ ! 31-Dec-14 14:29     
 
-PLOT/i=1:10  1/i
+use w180n90.nc
+use w180n40.nc
+use w180s20.nc
+use w180s10.nc
+use w140n90.nc
+use w140n40.nc
+use w140s10.nc
+use w100n90.nc
+use w100n40.nc
+use w100s10.nc
+show data
+list z[I=1,J=1]
+list z[d=1,I=1,J=1]
+list Z[d=1,I=1,J=1]
+list Z[d=1,i=1,i=1]
+list Z[d=1,I=1:5,J=1]
+list Z[d=4,I=1:5,J=1]
+exit

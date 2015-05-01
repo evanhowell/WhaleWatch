@@ -1,0 +1,19 @@
+library(gmt)
+gmt.system(grdpaste)
+gmt.system("grdpaste")
+?system
+system("grdpaste")
+system("echo $PATH")
+system("echo whoami")
+system("whoami")
+system("export PATH="/usr/local/bin/$PATH")
+system("export PATH=\"/usr/local/bin/$PATH\"")
+system("echo $PATH")
+R_ENVIRON
+sys.getenv()
+Sys.getenv()
+Sys.getenv("R_ENVIRON")
+Sys.getenv("PATH")
+exit
+quit
+q()

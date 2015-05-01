@@ -80,17 +80,17 @@ close(f)
 #Out of date. Need to update source.
 #Gridded at 0.25 so no regridding done
 f = CFILE("sshd.nc",mode="wb") 
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAsshmday.nc?sshd[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAsshmday.nc?sshd[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(225):1:(245)]",writedata=f@ref)
 close(f)
 
 #Gridded at 0.25 so no regridding done
 f = CFILE("ugeo.nc",mode="wb") 
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?u_current[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?u_current[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(225):1:(245)]",writedata=f@ref)
 close(f)
 
 #Gridded at 0.25 so no regridding done
 f = CFILE("vgeo.nc",mode="wb") 
-curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?v_current[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",writedata=f@ref)
+curlPerform(url="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAgeomday.nc?v_current[(2008-06-16T00:00:00Z):1:(2008-06-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(225):1:(245)]",writedata=f@ref)
 close(f)
 
 #Run a check for the same time frame. Every file should be the same month.
