@@ -5,6 +5,16 @@ Code to make the operational NASA WhaleWatch product
 
 Authors: Aimee Hoover, Evan Howell, and Elliott Hazen 2013-
 
+bathy.txt for use in prediction
+bwhaleGAMM.sufa1-40.RData - forty summer-fall models for use in predictions
+bwhaleGAMM.wisp1-40.RData - forty winter-spring models for use in predictions
+Environmental_Variables_Extract_04012015.R - code to curl and create a prediction file 
+Predict_GAMM_fitmultiplemodels_04012015.R - code to generate the 40 sufa and wisp models - should not need to be run again
+Predict_GAMMv0.2.R - code to predict mean and sd from the sufa and wisp models based on month of the factors
+Plot_FitMean_GMT.R - plot the predictions (mean and sd from GAMMs). We should discuss whether we want to use sd from the 40 runs + se from the gamm fits
+WhaleWatch_Run.R - run the predictions and plotting code. One script to rule them all.
+WhaleWatchFactors_1-12 2009 (and some 2008) - predictor variables for testing monthly predictions. I think we will want to automate on a finer time step based on Karin and Elizabeth's findings but we can discuss on Monday.
+
 WhaleWatch_Run.R
 	* This will be called to run the script start to finish, by running all the scripts from the command line
 
