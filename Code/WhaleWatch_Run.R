@@ -1,14 +1,16 @@
 #Start "cd C:\path\bin\Rgui.exe CMD BATCH C:\path\WhaleWatch_Run.r"
 
-#setwd("H:/Aimee_H/2014_Whalewatch/WhaleWatchGAMMs")
-  setwd('~/Dropbox/Documents/R/Blue_whales/Data/')
-  wd<-getwd(); path<-wd; modeldir<-'/PredictCCSv1/'; modeldir<-'/PredictV2/'
-  codedir<-'~/Dropbox/Documents/R/Blue_whales/Evan/'
+#Set working directories
+setwd('/Users/evan.howell/lib/git/WhaleWatch') #Change this when making live
+path = getwd()
+codedir = paste(path,'/Code',sep='')
+modeldir = paste(path,'/ModelRuns',sep='')
+datadir = paste(path, '/Data',sep='')
   
-if (file.exists("bathy.txt")){
+if (file.exists(paste(datadir,'/bathy.txt',sep=''))){
 	print("Bathymetry data present, moving to next command")
 }else{
-	source(paste(codedir,'bathymetry_grdfilter.R',sep=''))
+	source(paste(codedir,'get_Bathymetry.R',sep=''))
 }
 
 source(paste(codedir,'RCurl_Chla_SST.R',sep=''),print.eval=TRUE)
