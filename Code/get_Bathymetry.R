@@ -3,29 +3,20 @@
 #Therefore, it is getting depth with a median filter and then the SD of the depth on the cell.
 #Updated 08/14/2014
 
+# IMPORTANT - The script assumes that it is in the correct parent directory, and then sets relative paths from there.
+
 #Code validated to recreate bathy.txt file on 5/11/2015 by EAH
 
 #Install and load libraries if absent
-is.installed <- function(x){
-    is.element(x, installed.packages()[,1])
-  } 
-
-if (!is.installed("RCurl")){
-    install.packages("RCurl")
-  }
-if (!is.installed("gmt")){
-    install.packages("gmt")
-  }
-if (!is.installed("SDMTools")){
-    install.packages("SDMTools")
-  }
-if (!is.installed("sp")){
-    install.packages("sp")
-  }
-library(gmt)
-library(RCurl)
-library(SDMTools)
-library(sp)
+if(exists("pkgTest")==FALSE) {
+   print("Function pkgTest not found, loading file Code/load_Functions.R...")
+   source("Code/load_Functions.R")
+   }
+   
+pkgTest("gmt")
+pkgTest("SDMTools")
+pkgTest("sp")
+pkgTest("RCurl")
 
 #Download bathymetry files from srtm30, which are separated
 f = CFILE("Data/w140n40.nc",mode="wb")

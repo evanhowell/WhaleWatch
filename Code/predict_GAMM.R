@@ -1,42 +1,39 @@
-if (!is.installed("mgcv")){
-    install.packages("mgcv")
-  }
-if (!is.installed("raster")){
-    install.packages("raster")
-  }
-if (!is.installed("sp")){
-    install.packages("sp")
-  }
-if (!is.installed("rgdal")){
-    install.packages("rgdal")
-  }
+#Load required libraries. Function pkgTest is in the file Code/load_Functions.R and should have been loaded. If not test here and load file.
 
+if(exists("pkgTest")==FALSE) {
+   print("Function pkgTest not found, loading file Code/load_Functions.R...")
+   source("Code/load_Functions.R")
+   }
+   
+pkgTest("mgcv")
+pkgTest("sp")
+pkgTest("rgdal")
+pkgTest("raster")
 
-library(mgcv)
-library(raster)
-library(sp)
-library(rgdal)
 
 #setwd("~/Dropbox/Documents/R/Blue_whales/Evan/")
 #Run all GAMs to average
 ####BE SURE TO HAVE THE RIGHT GAMM NAME BEFORE SENDING THIS OUT
 
-filenm<-"WhaleWatchFactors_1_9.csv"
-factors = read.csv(filenm)
+# IMPORTANT - The script assumes that it is in the correct parent directory, and then sets relative paths from there.
+
+filenm<-"Data/WhaleWatchFactors_1_2009.csv"
+predfactors = read.csv(filenm)
 wwvector = vector('list')
+
 #For SuFaindex<-GAMdataRunCCS$month>7 & GAMdataRunCCS$month<12 need to load bwhaleGAMM.sufa. Otheriwse bwhaleGAMM.wisp
-if(factors$month>7 & factors$month<12) {gammnm<-"bwhaleGAMM.sufa"} else {gammnm<-"bwhaleGAMM.wisp"}
+if(predfactors$month>7 & predfactors$month<12) {gammnm<-"bwhaleGAMM.sufa"} else {gammnm<-"bwhaleGAMM.wisp"}
 
 files = paste(gammnm,1:40,".RData",sep="")
 for(i in files){
 	load(i)
 	bwhaleGAMM<-get(gammnm)
-	wwvector[[i]] = predict.gam(bwhaleGAMM$gam,get("factors"),se=TRUE, type="response")
+	wwvector[[i]] = predict.gam(bwhaleGAMM$gam,get("predfactors"),se=TRUE, type="response")
 	names(wwvector) = sub((i),"",names(wwvector))
 }
 
 #### Try BRT model
-pts=factors
+pts=predfactors
 coordinates(pts)=~lon+lat
 proj4string(pts)=CRS("+init=epsg:4326") # set it to lat-long
 #pts = spTransform(pts,CRS("+proj=longlat +ellps=WGS84 +no_defs"))
@@ -58,7 +55,7 @@ b <- brick(r1,r2,r3)
 # 	p = predict(b, bwhaleBRT.lr005, n.trees=angaus.tc5.lr005$gbm.call$best.trees, type="response")
 # 	p = mask(p, raster(b, 1))
 
-# 	wwbrtvector[[i]] = predict.gam(bwhaleGAMM$gam,get("factors"),se=TRUE, type="response")
+# 	wwbrtvector[[i]] = predict.gam(bwhaleGAMM$gam,get("predfactors"),se=TRUE, type="response")
 # 	names(wwbrtvector) = sub((i),"",names(wwvector))
 # }
 
@@ -67,7 +64,7 @@ fit =gam[ ,!substr(colnames(gam),1,1)=="s"]
 #sefit =gam[ ,substr(colnames(gam),1,1)=="s"]
 fitmean = rowMeans(fit,na.rm=T)
 sd = apply(fit,1,sd)
-predict = cbind(factors,fitmean,sd)
+predict = cbind(predfactors,fitmean,sd)
 predict$percent = predict$fitmean*100
 
 #Write a .csv file with all data if desired for comparisons
