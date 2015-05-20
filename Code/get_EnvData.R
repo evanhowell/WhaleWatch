@@ -83,58 +83,52 @@ if(sstdate-chldate!=0) { print("Problem: Dates not identical")}
 if(sum(sstlon-chllon)!=0) { print("Problem: Longitudes not identical")}
 if(sum(sstlat-chllat)!=0) { print("Problem: Latitudes not identical")}
 
-#STOPPING HERE>>>>> NEED TO DO SSH<<<<<<<<
 
-#Download SSH deviation and change dataframe format for GMT to regrid the same way to match other variables
-#Out of date. Need to update source.
-#Gridded at 0.25 so no regridding done
-outfile = "sshd.nc"
-dapurl = paste("http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdTAsshmday.nc?sshd[(",erdtime,"):1:(",erdtime,"2008-11-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",sep='')
-
-#Run a check for the same time frame. Every file should be the same month.
-sstnc = open.ncdf("sst.nc",write=FALSE)
-sshdnc = open.ncdf("sshd.nc",write=FALSE)
-
-sstvals<-get.var.ncdf(sstnc)
-sshvals<-get.var.ncdf(sshdnc)
-sstlon=get.var.ncdf(sstnc,"longitude")
-sstlat=get.var.ncdf(sstnc,"latitude")
-sshlon=get.var.ncdf(sshdnc,"longitude")
-sshlat=get.var.ncdf(sshdnc,"latitude")
-
-v1<-sstnc$var[[1]]
-varsize <- v1$varsize
-ndims <- v1$ndims
-ntsst <- varsize[ndims]
-
-v1<-sshdnc$var[[1]]
-varsize <- v1$varsize
-ndims <- v1$ndims
-ntssh <- varsize[ndims]
-
-
-if((att.get.ncdf(sstnc,0,"time_coverage_start")$value == att.get.ncdf(chlnc,0,"time_coverage_start")$value) && (att.get.ncdf(sstnc,0,"time_coverage_start")$value == att.get.ncdf(windnc,0,"time_coverage_start")$value)){
-	print("Same time period")
-	print(att.get.ncdf(sstnc,0,"time_coverage_start")$value)
-	}else{ 
-	stop("Not the same year/month")
-}
-
-
-month = as.numeric(substring(att.get.ncdf(sstnc,0,"time_coverage_start")$value,6,7))
-year = as.numeric(substring(att.get.ncdf(sstnc,0,"time_coverage_start")$value,1,4))
-
+#Everything OK, close Chla and SST NetCDF files
 close.ncdf(sstnc)
-close.ncdf(chlnc) 
-close.ncdf(sshdnc)
+close.ncdf(chlnc)
 
-#Filter to desired size
+# Regrid Chla and SST to 0.25 degrees
 gmt.system("grdfilter chl.nc?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gchlgridded_grdfilter.grd")
-gmt.system('grd2xyz chlgridded_grdfilter.grd',file="chl.xyz",append=F)
-
 gmt.system("grdfilter sst.nc?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsstgridded_grdfilter.grd") #using a median filter. 
+
+#Export as ascii to load into R
+gmt.system('grd2xyz chlgridded_grdfilter.grd',file="chl.xyz",append=F)
 gmt.system('grd2xyz sstgridded_grdfilter.grd',file="sst.xyz",append=F)
 
+#load into R
+#sstin = 
+
+#Download SSH and change dataframe format for GMT to regrid the same way to match other variables
+# The primary data place is AVISO, and we will pull 30 days centered on the mid-point day of the latest Chla file. 
+#
+#>>>>>>>MAY NEED TO CHANGE THIS AS THERE IS DELAY<<<<<<<<
+#
+#Gridded at 0.25 so no regridding done
+outfile = "sshd.nc"
+dapurl = "http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-nrt-over30d-global-allsat-msla-h"
+
+#Load SSH OpenDAP file from AVISO
+sshnc = open.ncdf(dapurl,write=FALSE)
+
+#Get all dates in NetCDF file
+sshdates = as.Date(get.var.ncdf(sshnc,"time"),origin="1950-01-01")
+
+#Find initial indices to pull data chunk. Pixels are centered and SST and Chl are not so subtracting 0.125 to get left edge of pixel. May want to look at this but shouldn't affect model.
+LonStartIdx <- which( ncssh$dim$lon$vals-0.125 == 225)
+LatStartIdx <- which( ncssh$dim$lat$vals-0.125 == 30)
+TimeStartIdx <- which(sshdates==as.character(sstdate-30)) #30 days before SST and Chla
+SLAIdx <- which(names(ncssh$var)=="sla") # find variable index for SLA
+
+#Get data slice
+sshslice = get.var.ncdf( sshnc, "sla", start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(80,76,30))
+
+close.ncdf(sshnc)
+
+#STOPPING HERE>>>>> NEED TO DO SSH<<<<<<<<
+
+
+#Filter to desired size
 gmt.system("grdfilter sshd.nc?sshd -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshdgridded_grdfilter.grd") #using a median filter. 
 gmt.system('grd2xyz sshdgridded_grdfilter.grd',file="sshd.xyz",append=F)
 
