@@ -1,188 +1,238 @@
-# This is an R script to download all environmental data used in the GAMM models. It names the variables properly to run in the GAMM prediction.
+# This is an R function to download all environmental data used in the GAMM models. It names the variables properly to run in the GAMM prediction.
 #This currently has CHLA, SST, and Y-Wind operational.
 
 # IMPORTANT - The script assumes that it is in the correct parent directory, and then sets relative paths from there.
 
 #Code validated to get env variables 5/18/2015 by EAH
 
-##############HEADER########################
-# Define functions used in script.
+get_EnvData <- function() {
 
-focalsd <- function(ncvals,xmin,xmax,ymin,ymax,xres=7,yres=7){
-	r<-raster(ncvals,xmn=xmin,xmx=xmax,ymn=ymin,ymx=ymax)
-	rsd = focal(r, w=matrix(1,nrow=yres,ncol=xres), fun=sd,na.rm=TRUE)
-	rsd = flip(t(rsd),2)
-	extent(rsd)<-c(extent(rsd)@ymin,extent(rsd)@ymax,extent(rsd)@xmin,extent(rsd)@xmax)
-	return(rsd)
+  ##############HEADER########################
+  # Define functions used in script.
+  
+  focalsd <- function(ncvals,xmin,xmax,ymin,ymax,xres=7,yres=7){
+  	r<-raster(ncvals,xmn=xmin,xmx=xmax,ymn=ymin,ymx=ymax)
+  	rsd = focal(r, w=matrix(1,nrow=yres,ncol=xres), fun=sd,na.rm=TRUE)
+  	rsd = flip(t(rsd),2)
+  	extent(rsd)<-c(extent(rsd)@ymin,extent(rsd)@ymax,extent(rsd)@xmin,extent(rsd)@xmax)
+  	return(rsd)
+  }
+  
+  # Function to generalize grabbing data from ERDDAP. 
+  #Download chl and change dataframe format for GMT to regrid chlorophyll to match SST
+  #Use [(last)] when obtaining real-time data from ERDDAP, e.g. [(2014-08-16T00:00:00Z):1:(2014-08-16T00:00:00Z)] = [(last)]
+  curldap <- function(dapurl, outfile) {
+  	f = CFILE(outfile,mode='wb')
+  	id = curlPerform(url=dapurl,writedata=f@ref) 
+  	close(f)
+  	return(id)
+  }
+  
+  #Load required libraries. Function pkgTest is in the file Code/load_Functions.R and should have been loaded. If not test here and load file.
+  
+  if(exists('pkgTest')==FALSE) {
+     logprint('Function pkgTest not found, loading file Code/load_Functions.R...')
+     source('Code/load_Functions.R')
+     }
+  
+  logprint('Loading required libraries')   
+  pkgTest('gmt')
+  pkgTest('SDMTools')
+  pkgTest('ncdf')
+  pkgTest('RCurl')
+  pkgTest('raster')
+  
+  logprint('Getting the current month and year...')
+  todaydate = format(Sys.time(), '%Y-%m-%d')
+  year = as.numeric(format(Sys.time(), '%Y'))
+  month = as.numeric(format(Sys.time(), '%m'))
+  
+  # Create temporary directory to hold files while creating product. Folder is named tmp.[seconds since 1970]. You can convert to date with as.Date([seconds since 1970]/86400,origin='1970-01-01')
+  tmpdir = paste('tmp.',as.integer(Sys.time()),sep='')
+  logprint(paste('Creating temp directory',tmpdir))
+  dir.create(tmpdir, showWarnings = TRUE)
+  
+  #http://coastwatch.pfeg.noaa.gov/erddap/convert/time.txt?n=473472000&units=seconds%20since%201970-01-01T00:00:00Z
+  
+  #Get Environmental variables. 
+  # First is to grab Chlorophyll data as this is the limiting factor. First step is to try from ERDDAP. If this fails can grab from other sources.
+  initialtime = 'last' #use this to get the last available ERDDAP file
+  
+  #For debugging you can enter in a specific ERDDAP time in the format 2015-04-16T00:00:00Z
+  #initialtime = '2009-04-16T00:00:00Z' #use this to get the last available ERDDAP file
+  
+  logprint(paste('Attempting to grab Chlorophyll data from time period',initialtime))
+  dapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+  chlfile = paste(tmpdir,'/chl.nc',sep='')
+  
+  idchl = curldap(dapurl, chlfile)
+  
+  #Check id to make sure it exits cleanly (e.g., id=0)
+  if(idchl!=0) {
+  	logprint(paste('Download failed, exit code =',id,'Trying secondary source'))
+    #Need to actually put secondary source here...
+  } else {
+    logprint('Chlorophyll data file download successful!!!')
+  }
+  
+  #Read in chl.nc file to get month and year to load other data files
+  logprint(paste('Reading in chlorophyll data file',chlfile))
+  chlnc = open.ncdf(chlfile,write=FALSE)
+  chldate = as.Date(get.var.ncdf(chlnc,'time')/(60*60*24),origin='1970-01-01')
+  chlmonth = as.integer(format(chldate,'%m'))
+  chlyear = as.integer(format(chldate,'%Y'))
+  
+  factorfile = sprintf('Data/WhaleWatchFactors_%d_%02d.csv',chlyear,chlmonth)
+  
+  # Do first sanity check - Make sure we actually need the file before moving on
+  
+  logprint(paste('Checking for existence of factor file',factorfile))
+  
+  if (file.exists(factorfile)){
+  	logprint(paste("Factor file ", factorfile, " present, moving to modeling phase",sep=''))
+    logprint(paste("Cleaning up temp directory", tmpdir))
+    unlink(tmpdir,recursive=TRUE)
+    return(factorfile)
+  }
+  
+  chllon=get.var.ncdf(chlnc,'longitude')
+  chllat=get.var.ncdf(chlnc,'latitude')
+  
+  erdtime = format(chldate,'%Y-%m-%dT00:00:00Z')
+  
+  #Download SST and change dataframe format for GMT to regrid 
+  # erdMWsstdmday - ERDDAP PFEG West Coast at 0.025
+  # erdMBsstdmday - ERDDAP PFEG Pacific Ocean at 0.0125 (PREFERRED AND SAME RES AS CHL)
+  sstfile = paste(tmpdir,'/sst.nc',sep='')
+  dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+  
+  idsst = curldap(dapurl, sstfile)
+  
+  #Check id to make sure it exits cleanly (e.g., id=0)
+  if(idsst!=0) {
+  	print(paste('Download failed, exit code =',id,'Trying secondary source'))
+  }
+  
+  sstnc = open.ncdf(sstfile,write=FALSE)
+  sstdate = as.Date(get.var.ncdf(sstnc,'time')/(60*60*24),origin='1970-01-01')
+  sstlon=get.var.ncdf(sstnc,'longitude')
+  sstlat=get.var.ncdf(sstnc,'latitude')
+  
+  #Do some sanity checks on dates and locations
+  if(sstdate-chldate!=0) { print('Problem: Dates not identical')}
+  if(sum(sstlon-chllon)!=0) { print('Problem: Longitudes not identical')}
+  if(sum(sstlat-chllat)!=0) { print('Problem: Latitudes not identical')}
+  
+  
+  #Everything OK, close Chla and SST NetCDF files
+  close.ncdf(sstnc)
+  close.ncdf(chlnc)
+  
+  # Regrid Chla and SST to 0.25 degrees
+  gmt.system(paste('grdfilter ',chlfile,'?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/chlgridded_grdfilter.grd',sep=''))
+  gmt.system(paste('grdfilter ',sstfile,'?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sstgridded_grdfilter.grd',sep='')) #using a median filter. 
+  
+  #Export as ascii to load into R
+  gmt.system(paste('grd2xyz ',tmpdir,'/chlgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/chl.xyz',sep=''),append=F)
+  gmt.system(paste('grd2xyz ',tmpdir,'/sstgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/sst.xyz',sep=''),append=F)
+  
+  #Make grids for SST that will be used for SSHSD
+  sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))
+  spsst<-sst
+  coordinates(spsst) <- ~ V1 + V2     #### check order here of V1 and V2
+  gridded(spsst) <- TRUE
+  # coerce to raster
+  rasterDF <- raster(spsst)
+  
+  #Download SSH and change dataframe format for GMT to regrid the same way to match other variables
+  # The primary data place is AVISO, and we will pull 30 days centered on the mid-point day of the latest Chla file. 
+  #
+  #>>>>>>>MAY NEED TO CHANGE THIS AS THERE IS DELAY<<<<<<<<
+  #
+  #
+  # Normally will pull from near-real-time data, unless running particular month where we need delayed time data
+  # First try near real time data
+  dapurl = 'http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-nrt-over30d-global-allsat-msla-h'
+  
+  #Load SSH OpenDAP file from AVISO
+  sshnc = open.ncdf(dapurl,write=FALSE)
+  
+  #Get all dates in NetCDF file
+  sshdates = as.Date(get.var.ncdf(sshnc,'time'),origin='1950-01-01')
+  
+  #Find initial indices to pull data chunk. Pixels are centered and SST and Chl are not so subtracting 0.125 to get left edge of pixel. May want to look at this but shouldn't affect model.
+  LonStartIdx <- which( sshnc$dim$lon$vals-0.125 == 225)
+  LatStartIdx <- which( sshnc$dim$lat$vals-0.125 == 30)
+  TimeStartIdx <- which(sshdates==as.character(sstdate-16)) #16 days before SST and Chla
+  SLAIdx <- which(names(sshnc$var)=='sla') # find variable index for SLA
+  
+  if (length(TimeStartIdx) == 0) {
+    logprint('Cannot find date in NRT, need to using delayed time product')
+    close(sshnc)
+    dapurl = 'http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-dt-global-twosat-msla-h'
+    sshnc = open.ncdf(dapurl,write=FALSE)
+    sshdates = as.Date(get.var.ncdf(sshnc,'time'),origin='1950-01-01')
+    LonStartIdx <- which( sshnc$dim$lon$vals-0.125 == 225)
+    LatStartIdx <- which( sshnc$dim$lat$vals-0.125 == 30)
+    TimeStartIdx <- which(sshdates==as.character(sstdate-16)) #16 days before SST and Chla
+    SLAIdx <- which(names(sshnc$var)=='sla') # find variable index for SLA
+  }
+  
+  #Get data slice
+  sshslice = get.var.ncdf( sshnc, 'sla', start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(81,77,16))
+  
+  #Get lat and long, need to subtract 0.125 to fix pixel center vs left corner mismatch with SST and Chla
+  sshlon=get.var.ncdf(sshnc,'lon',start=c(LonStartIdx),count=c(81))-0.125 
+  sshlat=get.var.ncdf(sshnc,'lat',start=c(LatStartIdx),count=c(77))-0.125
+  
+  close.ncdf(sshnc)
+  
+  #Do average in third (time) dimension
+  sshgrid = apply(sshslice, c(1,2), mean)
+  
+  #Make data frame from reshaped grid and lon/lat
+  a = sshgrid
+  dim(a) = c(6237,1) #81*77 shape is now Bottom to top, Left to right (in GMT -ZBLa)
+  ssh=data.frame(rep(sshlon,77), rep(sshlat,each=81),a) #make matrix, data goes by latitude first, then longitude. 
+  
+  #Load in reshaped SST, Chla, and bathy data
+  sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))
+  chl = read.table(paste(tmpdir,'/chl.xyz',sep=''))
+  bathy = read.table('Data/bathy.txt')
+  bathy = bathy[,c(5,6,1)] #Only take bathy, long, and lat
+  
+  #calculate SD for ssh
+  rsd<-focalsd(sshgrid,min(sshlon),max(sshlon),min(sshlat),max(sshlat),5,5)
+  rsdregrid<-raster::resample(rsd, rasterDF, method='bilinear') #Do we need this if in same grid?
+  rnc = writeRaster(rsdregrid,filename=paste(tmpdir,'/sshsd-working.nc',sep=''),format='CDF',overwrite=TRUE) # Write to netcdf file
+  
+  #run grd2xyz through blockmean to regrid to 0.25x0.25 resolution.
+  gmt.system(paste('grd2xyz ',tmpdir,'/sshsd-working.nc',sep=''),file=paste(tmpdir,'/sshsd-working.xyz',sep=''))
+  
+  gmt.system(paste('blockmean ',tmpdir,'/sshsd-working.xyz -Rd225/245/30/49 -I0.25/0.25',sep=''),file=paste(tmpdir,'/sshsd-blockmean.xyz',sep=''))
+  
+  gmt.system(paste('grdfilter ',tmpdir,'/sshsd-working.nc?layer -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sshsd_grdfilter.grd',sep=''))
+  
+  gmt.system(paste('grd2xyz ',tmpdir,'/sshsd_grdfilter.grd',sep=''),file=paste(tmpdir,'/sshsd.xyz',sep=''))
+  
+  #Combine sst, chl, bathy into one file
+  sshrms = read.table(paste(tmpdir,'/sshsd.xyz',sep=''))
+  
+  colnames(sst) = c('longitude','latitude','sst')
+  colnames(chl) = c('longitude','latitude','chl')
+  colnames(ssh) = c('longitude','latitude','ssh')
+  colnames(sshrms) = c('longitude','latitude','sshrms')
+  colnames(bathy) = c('longitude','latitude','bathy')
+  
+  modelin = merge(merge(merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude')),ssh,by=c('longitude','latitude')),sshrms,by=c('longitude','latitude'))
+  colnames(modelin) = c('longitude','latitude','bathy','sst','chl','ssh','sshrms')
+  
+  modelin$month = chlmonth #month derived from chlorophyll file
+  write.csv(modelin,factorfile,row.names=FALSE)
+  
+  #Do checks on files and then remove temp directory
+  logprint(paste("Cleaning up temp directory", tmpdir))
+  unlink(tmpdir,recursive=TRUE)
+  
+  return(factorfile)
 }
-
-# Function to generalize grabbing data from ERDDAP. 
-#Download chl and change dataframe format for GMT to regrid chlorophyll to match SST
-#Use [(last)] when obtaining real-time data from ERDDAP, e.g. [(2014-08-16T00:00:00Z):1:(2014-08-16T00:00:00Z)] = [(last)]
-curldap <- function(dapurl, outfile) {
-	f = CFILE(outfile,mode="wb")
-	id = curlPerform(url=dapurl,writedata=f@ref) 
-	close(f)
-	return(id)
-}
-
-#Load required libraries. Function pkgTest is in the file Code/load_Functions.R and should have been loaded. If not test here and load file.
-
-if(exists("pkgTest")==FALSE) {
-   print("Function pkgTest not found, loading file Code/load_Functions.R...")
-   source("Code/load_Functions.R")
-   }
-   
-pkgTest("gmt")
-pkgTest("SDMTools")
-pkgTest("ncdf")
-pkgTest("RCurl")
-pkgTest("raster")
-
-# Get the current month and year
-year = as.numeric(format(Sys.time(), "%Y"))
-month = as.numeric(format(Sys.time(), "%m"))
-
-#http://coastwatch.pfeg.noaa.gov/erddap/convert/time.txt?n=473472000&units=seconds%20since%201970-01-01T00:00:00Z
-
-#Get Environmental variables. 
-# First is to grab Chlorophyll data as this is the limiting factor. First step is to try from ERDDAP. If this fails can grab from other sources.
-
-dapurl="http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(last)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]"
-outfile = "chl.nc"
-
-idchl = curldap(dapurl, outfile)
-
-#Check id to make sure it exits cleanly (e.g., id=0)
-if(id!=0) {
-	print(paste("Download failed, exit code =",id,"Trying secondary source"))
-}
-
-#Read in chl.nc file to get month and year to load other data files
-
-chlnc = open.ncdf("chl.nc",write=FALSE)
-chldate = as.Date(get.var.ncdf(chlnc,"time")/(60*60*24),origin="1970-01-01")
-chllon=get.var.ncdf(chlnc,"longitude")
-chllat=get.var.ncdf(chlnc,"latitude")
-
-erdtime = format(chldate,'%Y-%m-%dT00:00:00Z')
-
-#Download SST and change dataframe format for GMT to regrid 
-outfile = "sst.nc"
-dapurl = paste("http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(",erdtime,"):1:(",erdtime,")][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]",sep='')
-
-idsst = curldap(dapurl, outfile)
-
-sstnc = open.ncdf("sst.nc",write=FALSE)
-sstdate = as.Date(get.var.ncdf(sstnc,"time")/(60*60*24),origin="1970-01-01")
-sstlon=get.var.ncdf(sstnc,"longitude")
-sstlat=get.var.ncdf(sstnc,"latitude")
-
-#Do some sanity checks on dates and locations
-if(sstdate-chldate!=0) { print("Problem: Dates not identical")}
-if(sum(sstlon-chllon)!=0) { print("Problem: Longitudes not identical")}
-if(sum(sstlat-chllat)!=0) { print("Problem: Latitudes not identical")}
-
-
-#Everything OK, close Chla and SST NetCDF files
-close.ncdf(sstnc)
-close.ncdf(chlnc)
-
-# Regrid Chla and SST to 0.25 degrees
-gmt.system("grdfilter chl.nc?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gchlgridded_grdfilter.grd")
-gmt.system("grdfilter sst.nc?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsstgridded_grdfilter.grd") #using a median filter. 
-
-#Export as ascii to load into R
-gmt.system('grd2xyz chlgridded_grdfilter.grd',file="chl.xyz",append=F)
-gmt.system('grd2xyz sstgridded_grdfilter.grd',file="sst.xyz",append=F)
-
-#load into R
-#sstin = 
-
-#Download SSH and change dataframe format for GMT to regrid the same way to match other variables
-# The primary data place is AVISO, and we will pull 30 days centered on the mid-point day of the latest Chla file. 
-#
-#>>>>>>>MAY NEED TO CHANGE THIS AS THERE IS DELAY<<<<<<<<
-#
-#Gridded at 0.25 so no regridding done
-outfile = "sshd.nc"
-dapurl = "http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-nrt-over30d-global-allsat-msla-h"
-
-#Load SSH OpenDAP file from AVISO
-sshnc = open.ncdf(dapurl,write=FALSE)
-
-#Get all dates in NetCDF file
-sshdates = as.Date(get.var.ncdf(sshnc,"time"),origin="1950-01-01")
-
-#Find initial indices to pull data chunk. Pixels are centered and SST and Chl are not so subtracting 0.125 to get left edge of pixel. May want to look at this but shouldn't affect model.
-LonStartIdx <- which( ncssh$dim$lon$vals-0.125 == 225)
-LatStartIdx <- which( ncssh$dim$lat$vals-0.125 == 30)
-TimeStartIdx <- which(sshdates==as.character(sstdate-30)) #30 days before SST and Chla
-SLAIdx <- which(names(ncssh$var)=="sla") # find variable index for SLA
-
-#Get data slice
-sshslice = get.var.ncdf( sshnc, "sla", start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(80,76,30))
-
-close.ncdf(sshnc)
-
-#STOPPING HERE>>>>> NEED TO DO SSH<<<<<<<<
-
-
-#Filter to desired size
-gmt.system("grdfilter sshd.nc?sshd -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshdgridded_grdfilter.grd") #using a median filter. 
-gmt.system('grd2xyz sshdgridded_grdfilter.grd',file="sshd.xyz",append=F)
-
-#Get right grids
-sst = read.table("sst.xyz")
-spsst<-sst
-coordinates(spsst) <- ~ V1 + V2     #### check order here of V1 and V2
-gridded(spsst) <- TRUE
-# coerce to raster
-rasterDF <- raster(spsst)
-
-#calculate SD for sst
-rsd<-focalsd(sstvals,min(sstlon),max(sstlon),min(sstlat),max(sstlat),29,29)
-rsdregrid<-raster::resample(rsd, rasterDF, method="bilinear")
-#rsdvals<-extract(rsdregrid,spsst)
-rnc = writeRaster(rsdregrid,filename="sstsd-working.nc",format="CDF",overwrite=TRUE) # Write to netcdf file
-
-#run grd2xyz through blockmean to regrid to 0.25x0.25 resolution.
-gmt.system("grd2xyz sstsd-working.nc",file="sstsd-working.xyz")
-gmt.system("blockmean sstsd-working.xyz -Rd225/245/30/49 -I0.25/0.25", file="sstsd-blockmean.xyz")
-gmt.system("grdfilter sstsd-working.nc?layer -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsstsd_grdfilter.grd") #using a median filter. 
-gmt.system('grd2xyz sstsd_grdfilter.grd',file="sstsd.xyz",append=F)
-
-#calculate SD for ssh
-rsd<-focalsd(sshvals,min(sshlon),max(sshlon),min(sshlat),max(sshlat),5,5)
-#rsd<-focalsd(sshvals,min(sshlat),max(sshlat),min(sshlon),max(sshlon),5,5)
-rsdregrid<-raster::resample(rsd, rasterDF, method="bilinear")
-rnc = writeRaster(rsdregrid,filename="sshsd-working.nc",format="CDF",overwrite=TRUE) # Write to netcdf file
-
-#run grd2xyz through blockmean to regrid to 0.25x0.25 resolution.
-gmt.system("grd2xyz sshsd-working.nc",file="sshsd-working.xyz")
-gmt.system("blockmean sshsd-working.xyz -Rd225/245/30/49 -I0.25/0.25", file="sshsd-blockmean.xyz")
-gmt.system("grdfilter sshsd-working.nc?layer -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -Gsshsd_grdfilter.grd") #using a median filter. 
-gmt.system('grd2xyz sshsd_grdfilter.grd',file="sshsd.xyz",append=F)
-
-
-#Combine sst, chl, bathy into one file
-sst = read.table("sst.xyz")
-chl = read.table("chl.xyz")
-bathy = read.table("bathy.txt")
-sshd = read.table("sshd.xyz")
-sshrms = read.table("sshsd.xyz")
-
-colnames(sst) = c("longitude","latitude","sst")
-colnames(chl) = c("longitude","latitude","chl")
-colnames(sshd) = c("longitude","latitude","sshd")
-colnames(sshrms) = c("longitude","latitude","sshrms")
-colnames(bathy) = c("longitude","latitude","bathy")
-
-merged = merge(merge(merge(merge(merge(merge(merge(sst,bathy,by=c("latitude","longitude")),chl,by=c("latitude","longitude")),wind,by=c("latitude","longitude")),eke,by=c("latitude","longitude")),sshd,by=c("latitude","longitude")),sstrms,by=c("latitude","longitude")),sshrms,by=c("latitude","longitude"))
-colnames(merged) = c("lat","lon","sst","bathy","bathyrms","slope","aspect","chl","uy10","eke","sshd","sstrms","sshrms")
-
-merged$month = month
-write.csv(merged,sprintf("WhaleWatchFactors_%s_%s.csv",month,year),row.names=FALSE)
-
-file.remove("chl.nc","chl.xyz","sst.nc","sst.xyz","sshd.nc","sstgridded_grdfilter.grd","chlgridded_grdfilter.grd")
-
