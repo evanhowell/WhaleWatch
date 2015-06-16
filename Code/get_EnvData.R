@@ -89,7 +89,7 @@ get_EnvData <- function() {
   logprint(paste('Checking for existence of factor file',factorfile))
   
   if (file.exists(factorfile)){
-  	logprint(paste("Factor file ", factorfile, " present, moving to modeling phase",sep=''))
+  	logprint(paste("Factor file ", factorfile, " present, moving to modeling phase",sep='')) #Problem here
     logprint(paste("Cleaning up temp directory", tmpdir))
     unlink(tmpdir,recursive=TRUE)
     return(factorfile)

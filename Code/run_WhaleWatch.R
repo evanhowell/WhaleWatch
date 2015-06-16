@@ -12,7 +12,8 @@ datadir = paste(path, '/Data',sep='')
 source("Code/load_Functions.R")
 
 #Set up logfile
-logfile <- file("logs/templog", open="wt")
+templogfile = "logs/templog"
+logfile <- file(templogfile, open="wt")
 sink(logfile, type=c("output","message")) #set all output to templog
 
 #set up initial log with helpful information
@@ -25,17 +26,26 @@ if (file.exists(paste(datadir,'/bathy.txt',sep=''))){
   get_Bathymetry()
 }
 
-logprint("Running function get_EnvData.R")
+#Now run function to get environmental data parameters
+logprint("Running function get_EnvData")
 get_EnvData()
-logprint("Running file get_EnvData.R")
-source(paste(codedir,'Predict_GAMMv0.2.R',sep=''),print.eval=TRUE)
-logprint("Running file get_EnvData.R")
-source(paste(codedir,'Plot_FitMean_GMT.R',sep=''),print.eval=TRUE)
+logprint("Finished running function get_EnvData")
 
-newlogfile = paste('logs/log',Sys.time(),'.log',sep='')
+#Now run function to get predictions from the 40 models
+#logprint("Running function predict_GAMM")
+#predict_GAMM()
+#logprint("Finished running function predict_GAMM")
+
+#Now run function to make the plots
+#logprint("Running function predict_GAMM")
+#predict_GAMM()
+#logprint("Finished running function predict_GAMM")
+
+#Close up temp logfile, then rename logfile from templog to dated logfile
+newlogfile = paste('logs/log',format(Sys.time(), '%Y-%m-%dT%H-%M-%S'),'.log',sep='')
 
 logprint(paste("Closing temporary logfile and renaming to file ", newlogfile))
 close(logfile)
 
-file.rename(logfile, newlogfile)
-sink(type = c("output", "message")) #reset all messages to STDOUT and STDERR
+file.rename(templogfile, newlogfile)
+#sink(type = c("output", "message")) #reset all messages to STDOUT and STDERR
