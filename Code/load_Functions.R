@@ -22,3 +22,5 @@ logprint <- function(msg)
 
 source('Code/get_Bathymetry.R')
 source('Code/get_EnvData.R')
+source('Code/predict_GAMM.R')
+source('Code/plot_GAMMRaster.R')

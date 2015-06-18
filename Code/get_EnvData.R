@@ -228,6 +228,7 @@ get_EnvData <- function() {
   colnames(modelin) = c('longitude','latitude','bathy','sst','chl','ssh','sshrms')
   
   modelin$month = chlmonth #month derived from chlorophyll file
+  modelin$year = chlyear #month derived from chlorophyll file
   write.csv(modelin,factorfile,row.names=FALSE)
   
   #Do checks on files and then remove temp directory

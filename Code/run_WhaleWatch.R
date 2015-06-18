@@ -2,7 +2,8 @@
 #Start "cd C:\path\bin\Rgui.exe CMD BATCH C:\path\WhaleWatch_Run.r"
 
 #Set working directories
-setwd('/Users/evan.howell/lib/git/WhaleWatch') #Change this when making live
+#setwd('/Users/evan.howell/lib/git/WhaleWatch') #Change this when making live
+setwd('/Users/ehowell/git/WhaleWatch') #Change this when making live
 path = getwd()
 codedir = paste(path,'/Code',sep='')
 modeldir = paste(path,'/ModelRuns',sep='')
@@ -28,18 +29,18 @@ if (file.exists(paste(datadir,'/bathy.txt',sep=''))){
 
 #Now run function to get environmental data parameters
 logprint("Running function get_EnvData")
-get_EnvData()
+factorfile = get_EnvData()
 logprint("Finished running function get_EnvData")
 
 #Now run function to get predictions from the 40 models
-#logprint("Running function predict_GAMM")
-#predict_GAMM()
-#logprint("Finished running function predict_GAMM")
+logprint("Running function predict_GAMM")
+predictvec = predict_GAMM(factorfile)
+logprint("Finished running function predict_GAMM")
 
 #Now run function to make the plots
-#logprint("Running function predict_GAMM")
-#predict_GAMM()
-#logprint("Finished running function predict_GAMM")
+logprint("Running function plot_GAMMRaster")
+plot_GAMMRaster(predictvec)
+logprint("Finished running function plot_GAMMRaster")
 
 #Close up temp logfile, then rename logfile from templog to dated logfile
 newlogfile = paste('logs/log',format(Sys.time(), '%Y-%m-%dT%H-%M-%S'),'.log',sep='')
