@@ -10,14 +10,6 @@ get_EnvData <- function() {
   ##############HEADER########################
   # Define functions used in script.
   
-  focalsd <- function(ncvals,xmin,xmax,ymin,ymax,xres=7,yres=7){
-  	r<-raster(ncvals,xmn=xmin,xmx=xmax,ymn=ymin,ymx=ymax)
-  	rsd = focal(r, w=matrix(1,nrow=yres,ncol=xres), fun=sd,na.rm=TRUE)
-  	rsd = flip(t(rsd),2)
-  	extent(rsd)<-c(extent(rsd)@ymin,extent(rsd)@ymax,extent(rsd)@xmin,extent(rsd)@xmax)
-  	return(rsd)
-  }
-  
   # Function to generalize grabbing data from ERDDAP. 
   #Download chl and change dataframe format for GMT to regrid chlorophyll to match SST
   #Use [(last)] when obtaining real-time data from ERDDAP, e.g. [(2014-08-16T00:00:00Z):1:(2014-08-16T00:00:00Z)] = [(last)]
@@ -41,7 +33,10 @@ get_EnvData <- function() {
   pkgTest('ncdf')
   pkgTest('RCurl')
   pkgTest('raster')
+  pkgTest('reshape')
   
+  #load master raster grid for resampling (0.25x0.25 degrees)
+  load('Data/MasterGrid.RData')
   logprint('Getting the current month and year...')
   todaydate = format(Sys.time(), '%Y-%m-%d')
   year = as.numeric(format(Sys.time(), '%Y'))
@@ -61,8 +56,28 @@ get_EnvData <- function() {
   #For debugging you can enter in a specific ERDDAP time in the format 2015-04-16T00:00:00Z
   #initialtime = '2009-04-16T00:00:00Z' #use this to get the last available ERDDAP file
   
-  logprint(paste('Attempting to grab Chlorophyll data from time period',initialtime))
+  #Call ERDDAP to get the date of "latest" chlorophyll file
+  dapurl="http://coastwatch.pfeg.noaa.gov/erddap/tabledap/allDatasets.csv0?maxTime&datasetID=%22erdMBchlamday%22"
+  h = basicTextGatherer()
+  id=curlPerform(url=dapurl, writefunction=h$update)
+  testdate=as.Date(h$value())
+  factorfile = paste('Data/WhaleWatchFactors_',format(testdate,"%Y_%m"),'.csv',sep='')
+  
+  # Do first sanity check - Make sure we actually need the file before moving on
+  logprint(paste('Checking for existence of factor file',factorfile))
+  
+  if (file.exists(factorfile)){
+    logprint(paste("Factor file ", factorfile, " present, moving to modeling phase",sep='')) #Problem here
+    logprint(paste("Cleaning up temp directory", tmpdir))
+    unlink(tmpdir,recursive=TRUE)
+    return(factorfile)
+  }
+  
+  logprint('Factorfile not found, grabbing data')
+  
+  #Now get latest file
   dapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMBchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+  logprint(paste('Attempting to grab Chlorophyll using',dapurl))
   chlfile = paste(tmpdir,'/chl.nc',sep='')
   
   idchl = curldap(dapurl, chlfile)
@@ -82,28 +97,24 @@ get_EnvData <- function() {
   chlmonth = as.integer(format(chldate,'%m'))
   chlyear = as.integer(format(chldate,'%Y'))
   
-  factorfile = sprintf('Data/WhaleWatchFactors_%d_%02d.csv',chlyear,chlmonth)
-  
-  # Do first sanity check - Make sure we actually need the file before moving on
-  
-  logprint(paste('Checking for existence of factor file',factorfile))
-  
-  if (file.exists(factorfile)){
-  	logprint(paste("Factor file ", factorfile, " present, moving to modeling phase",sep='')) #Problem here
-    logprint(paste("Cleaning up temp directory", tmpdir))
-    unlink(tmpdir,recursive=TRUE)
-    return(factorfile)
-  }
-  
-  logprint('Factorfile not found, grabbing data')
-  
   chllon=get.var.ncdf(chlnc,'longitude')
   chllat=get.var.ncdf(chlnc,'latitude')
   
   erdtime = format(chldate,'%Y-%m-%dT00:00:00Z')
   
+  #Get Chlorophyll data and regrid to mastergrid
+  chlraw = get.var.ncdf( chlnc, 'chlorophyll')
+  rownames(chlraw) = chllon #Need to have lon and lat for melt reshape
+  colnames(chlraw) = chllat
+  chlxyz = melt(chlraw, c('longitude','latitude'))
+  coordinates(chlxyz) <- ~ longitude + latitude     #### check order here of V1 and V2
+  gridded(chlxyz) <- TRUE
+  # coerce to raster
+  rasterchl <- raster(chlxyz)
+  rasterchlmedian <- focal(rasterchl, w=matrix(1/25,nrow=5,ncol=5))
+  chl<-resample(rasterchlmedian, mastergrid, method='bilinear')
+  
   #Download SST and change dataframe format for GMT to regrid 
-  # erdMWsstdmday - ERDDAP PFEG West Coast at 0.025
   # erdMBsstdmday - ERDDAP PFEG Pacific Ocean at 0.0125 (PREFERRED AND SAME RES AS CHL)
   sstfile = paste(tmpdir,'/sst.nc',sep='')
   dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMBsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
@@ -121,6 +132,16 @@ get_EnvData <- function() {
   sstlon=get.var.ncdf(sstnc,'longitude')
   sstlat=get.var.ncdf(sstnc,'latitude')
   
+  sstraw = get.var.ncdf( sstnc, 'sst')
+  rownames(sstraw) = sstlon #Need to have lon and lat for melt reshape
+  colnames(sstraw) = sstlat
+  sstxyz = melt(sstraw, c('longitude','latitude'))
+  coordinates(sstxyz) <- ~ longitude + latitude     #### check order here of V1 and V2
+  gridded(sstxyz) <- TRUE
+  # coerce to raster
+  rastersst <- raster(sstxyz)
+  sst<-resample(rastersst, mastergrid, method='bilinear')
+  
   #Do some sanity checks on dates and locations
   if(sstdate-chldate!=0) { logprint('Problem: Dates not identical')}
   if(sum(sstlon-chllon)!=0) { logprint('Problem: Longitudes not identical')}
@@ -130,24 +151,6 @@ get_EnvData <- function() {
   #Everything OK, close Chla and SST NetCDF files
   close.ncdf(sstnc)
   close.ncdf(chlnc)
-  
-  #Try to do this all in raster? Remove GMT dependency
-  # Regrid Chla and SST to 0.25 degrees
-  logprint("Regridding Chlorophyll and SST data")
-  gmt.system(paste('grdfilter ',chlfile,'?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/chlgridded_grdfilter.grd',sep=''))
-  gmt.system(paste('grdfilter ',sstfile,'?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sstgridded_grdfilter.grd',sep='')) #using a median filter. 
-  
-  #Export as ascii to load into R
-  gmt.system(paste('grd2xyz ',tmpdir,'/chlgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/chl.xyz',sep=''),append=F)
-  gmt.system(paste('grd2xyz ',tmpdir,'/sstgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/sst.xyz',sep=''),append=F)
-  
-  #Make grids for SST that will be used for SSHSD
-  sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))
-  spsst<-sst
-  coordinates(spsst) <- ~ V1 + V2     #### check order here of V1 and V2
-  gridded(spsst) <- TRUE
-  # coerce to raster
-  rasterDF <- raster(spsst)
   
   #Download SSH and change dataframe format for GMT to regrid the same way to match other variables
   # The primary data place is AVISO, and we will pull 16 days centered on the mid-point day of the latest Chla file. 
@@ -197,37 +200,32 @@ get_EnvData <- function() {
   close.ncdf(sshnc)
   
   #Do average in third (time) dimension
-  sshgrid = apply(sshslice, c(1,2), mean)
+  sshraw = apply(sshslice, c(1,2), mean)
+  rownames(sshraw) = sshlon #Need to have lon and lat for melt reshape
+  colnames(sshraw) = sshlat
   
-  #Make data frame from reshaped grid and lon/lat
-  a = sshgrid
-  dim(a) = c(6237,1) #81*77 shape is now Bottom to top, Left to right (in GMT -ZBLa)
-  ssh=data.frame(rep(sshlon,77), rep(sshlat,each=81),a) #make matrix, data goes by latitude first, then longitude. 
-  
-  #Load in reshaped SST, Chla, and bathy data
-  logprint("Loading in reshaped SST and Chl-a data")
-  sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))
-  chl = read.table(paste(tmpdir,'/chl.xyz',sep=''))
-  bathy = read.table('Data/bathy.txt')
-  bathy = bathy[,c(5,6,1,2)] #Only take bathy, bathyrms, long, and lat
+   #Turn matrix into xyz to regrid, then make raster
+  logprint("Regridding SSH to mastergrid")
+  sshxyz = melt(sshraw, c('longitude','latitude'))
+  coordinates(sshxyz) <- ~ longitude + latitude     #### check order here of V1 and V2
+  gridded(sshxyz) <- TRUE
+  # coerce to raster
+  rasterssh <- raster(sshxyz)
+  ssh<-resample(rasterssh, mastergrid, method='bilinear')
   
   #calculate SD for ssh
-  logprint("Regridding SSH to SST raster")
-  rsd<-focalsd(sshgrid,min(sshlon),max(sshlon),min(sshlat),max(sshlat),5,5)
-  rsdregrid<-raster::resample(rsd, rasterDF, method='bilinear') #Do we need this if in same grid?
-  rnc = writeRaster(rsdregrid,filename=paste(tmpdir,'/sshsd-working.nc',sep=''),format='CDF',overwrite=TRUE) # Write to netcdf file
-  
-  #run grd2xyz through blockmean to regrid to 0.25x0.25 resolution.
-  gmt.system(paste('grd2xyz ',tmpdir,'/sshsd-working.nc',sep=''),file=paste(tmpdir,'/sshsd-working.xyz',sep=''))
-  
-  gmt.system(paste('blockmean ',tmpdir,'/sshsd-working.xyz -Rd225/245/30/49 -I0.25/0.25',sep=''),file=paste(tmpdir,'/sshsd-blockmean.xyz',sep=''))
-  
-  gmt.system(paste('grdfilter ',tmpdir,'/sshsd-working.nc?layer -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sshsd_grdfilter.grd',sep=''))
-  
-  gmt.system(paste('grd2xyz ',tmpdir,'/sshsd_grdfilter.grd',sep=''),file=paste(tmpdir,'/sshsd.xyz',sep=''))
-  
-  #Combine sst, chl, bathy into one file
-  sshrms = read.table(paste(tmpdir,'/sshsd.xyz',sep=''))
+  logprint("Calculating SD for SSH raster")
+  sshsdraw<-focal(ssh, w=matrix(1,nrow=5,ncol=5), fun=sd,na.rm=TRUE)
+  sshrms<-resample(sshsdraw, mastergrid, method='bilinear') #Do we need this if in same grid?
+   
+  #Load in reshaped SST, Chla, and bathy data
+  logprint("Loading in reshaped SST and Chl-a data")
+  sst = as.data.frame(sst,xy=TRUE) #turn SST raster into xyz file
+  chl = as.data.frame(chl,xy=TRUE) #turn Chl raster into xyz file
+  ssh = as.data.frame(ssh,xy=TRUE) #turn SSH raster into xyz file
+  sshrms = as.data.frame(sshrms,xy=TRUE) #turn SSHSD raster into xyz file
+  bathy = read.table('Data/bathy.txt')
+  bathy = bathy[,c(5,6,1,2)] #Only take bathy, bathyrms, long, and lat
   
   colnames(sst) = c('longitude','latitude','sst')
   colnames(chl) = c('longitude','latitude','chl')

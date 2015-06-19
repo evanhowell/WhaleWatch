@@ -49,4 +49,5 @@ logprint(paste("Closing temporary logfile and renaming to file ", newlogfile))
 close(logfile)
 
 file.rename(templogfile, newlogfile)
+logprint("DONE!!!! Check Images, Data, and Predictions directories")
 #sink(type = c("output", "message")) #reset all messages to STDOUT and STDERR
