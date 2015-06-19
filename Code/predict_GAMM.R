@@ -19,7 +19,7 @@ predict_GAMM <- function(factorfile) {
   
   # IMPORTANT - The script assumes that it is in the correct parent directory, and then sets relative paths from there.
   
-  factorfile<-"Data/WhaleWatchFactors_9_2009.csv" #Only if you want to load specific file
+  #factorfile<-"Data/WhaleWatchFactors_9_2009.csv" #Only if you want to load specific file
   predictfile = sub("Data","Predictions",factorfile)
   predictfile = sub("Factors","Predictions",predictfile)
   

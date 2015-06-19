@@ -95,6 +95,8 @@ get_EnvData <- function() {
     return(factorfile)
   }
   
+  logprint('Factorfile not found, grabbing data')
+  
   chllon=get.var.ncdf(chlnc,'longitude')
   chllat=get.var.ncdf(chlnc,'latitude')
   
@@ -106,6 +108,7 @@ get_EnvData <- function() {
   sstfile = paste(tmpdir,'/sst.nc',sep='')
   dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
   
+  logprint(paste("Attempting SST download", dapurl))
   idsst = curldap(dapurl, sstfile)
   
   #Check id to make sure it exits cleanly (e.g., id=0)
@@ -129,6 +132,7 @@ get_EnvData <- function() {
   close.ncdf(chlnc)
   
   # Regrid Chla and SST to 0.25 degrees
+  logprint("Regridding Chlorophyll and SST data")
   gmt.system(paste('grdfilter ',chlfile,'?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/chlgridded_grdfilter.grd',sep=''))
   gmt.system(paste('grdfilter ',sstfile,'?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sstgridded_grdfilter.grd',sep='')) #using a median filter. 
   
@@ -155,6 +159,7 @@ get_EnvData <- function() {
   dapurl = 'http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-nrt-over30d-global-allsat-msla-h'
   
   #Load SSH OpenDAP file from AVISO
+  logprint(paste("Attempting SSH download", dapurl))
   sshnc = open.ncdf(dapurl,write=FALSE)
   
   #Get all dates in NetCDF file
@@ -196,12 +201,14 @@ get_EnvData <- function() {
   ssh=data.frame(rep(sshlon,77), rep(sshlat,each=81),a) #make matrix, data goes by latitude first, then longitude. 
   
   #Load in reshaped SST, Chla, and bathy data
+  logprint("Loading in reshaped SST and Chl-a data")
   sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))
   chl = read.table(paste(tmpdir,'/chl.xyz',sep=''))
   bathy = read.table('Data/bathy.txt')
-  bathy = bathy[,c(5,6,1)] #Only take bathy, long, and lat
+  bathy = bathy[,c(5,6,1,2)] #Only take bathy, bathyrms, long, and lat
   
   #calculate SD for ssh
+  logprint("Regridding SSH to SST raster")
   rsd<-focalsd(sshgrid,min(sshlon),max(sshlon),min(sshlat),max(sshlat),5,5)
   rsdregrid<-raster::resample(rsd, rasterDF, method='bilinear') #Do we need this if in same grid?
   rnc = writeRaster(rsdregrid,filename=paste(tmpdir,'/sshsd-working.nc',sep=''),format='CDF',overwrite=TRUE) # Write to netcdf file
@@ -222,13 +229,15 @@ get_EnvData <- function() {
   colnames(chl) = c('longitude','latitude','chl')
   colnames(ssh) = c('longitude','latitude','ssh')
   colnames(sshrms) = c('longitude','latitude','sshrms')
-  colnames(bathy) = c('longitude','latitude','bathy')
+  colnames(bathy) = c('longitude','latitude','bathy','bathyrms')
   
   modelin = merge(merge(merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude')),ssh,by=c('longitude','latitude')),sshrms,by=c('longitude','latitude'))
-  colnames(modelin) = c('longitude','latitude','bathy','sst','chl','ssh','sshrms')
+  colnames(modelin) = c('longitude','latitude','bathy','bathyrms','sst','chl','ssh','sshrms')
   
   modelin$month = chlmonth #month derived from chlorophyll file
   modelin$year = chlyear #month derived from chlorophyll file
+  
+  logprint(paste("Writing factorfile to file",factorfile))
   write.csv(modelin,factorfile,row.names=FALSE)
   
   #Do checks on files and then remove temp directory
