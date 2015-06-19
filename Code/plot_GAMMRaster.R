@@ -4,6 +4,10 @@ plot_GAMMRaster <- function(predictvec) {
     source("Code/load_Functions.R")
   }
   
+  pkgTest("maptools")
+  pkgTest("raster")
+  pkgTest("rasterVis")
+  
   #Build date from month and year within predictvec
   #predictvec$year=2009 #DEBUGGING ONLY. COMMENT OUT FOR PRODUCTION!
   fileDate = as.Date(paste(predictvec$month[1],"1",predictvec$year[1],sep="/"),format="%m/%d/%Y")

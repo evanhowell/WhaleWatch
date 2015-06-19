@@ -8,7 +8,7 @@ predict_GAMM <- function(factorfile) {
      
   pkgTest("mgcv")
   pkgTest("sp")
-  pkgTest("rgdal")
+  #pkgTest("rgdal") #nor needed unless using Excel?
   pkgTest("raster")
   pkgTest("gmt")
   

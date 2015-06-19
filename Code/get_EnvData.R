@@ -52,7 +52,7 @@ get_EnvData <- function() {
   logprint(paste('Creating temp directory',tmpdir))
   dir.create(tmpdir, showWarnings = TRUE)
   
-  #http://coastwatch.pfeg.noaa.gov/erddap/convert/time.txt?n=473472000&units=seconds%20since%201970-01-01T00:00:00Z
+  #http://coastwatch.pfeg.noaa.gov/erddap/convert/time.txt?n=473472000&units=seconds%20since%201970-01-01T00:00:00Z #Debugging
   
   #Get Environmental variables. 
   # First is to grab Chlorophyll data as this is the limiting factor. First step is to try from ERDDAP. If this fails can grab from other sources.
@@ -62,12 +62,12 @@ get_EnvData <- function() {
   #initialtime = '2009-04-16T00:00:00Z' #use this to get the last available ERDDAP file
   
   logprint(paste('Attempting to grab Chlorophyll data from time period',initialtime))
-  dapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+  dapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMBchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
   chlfile = paste(tmpdir,'/chl.nc',sep='')
   
   idchl = curldap(dapurl, chlfile)
   
-  #Check id to make sure it exits cleanly (e.g., id=0)
+  #Check id to make sure it exits cleanly (e.g., id=0) #Maybe add try command here?
   if(idchl!=0) {
   	logprint(paste('Download failed, exit code =',id,'Trying secondary source'))
     #Need to actually put secondary source here...
@@ -106,7 +106,7 @@ get_EnvData <- function() {
   # erdMWsstdmday - ERDDAP PFEG West Coast at 0.025
   # erdMBsstdmday - ERDDAP PFEG Pacific Ocean at 0.0125 (PREFERRED AND SAME RES AS CHL)
   sstfile = paste(tmpdir,'/sst.nc',sep='')
-  dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+  dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMBsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
   
   logprint(paste("Attempting SST download", dapurl))
   idsst = curldap(dapurl, sstfile)
@@ -122,15 +122,16 @@ get_EnvData <- function() {
   sstlat=get.var.ncdf(sstnc,'latitude')
   
   #Do some sanity checks on dates and locations
-  if(sstdate-chldate!=0) { print('Problem: Dates not identical')}
-  if(sum(sstlon-chllon)!=0) { print('Problem: Longitudes not identical')}
-  if(sum(sstlat-chllat)!=0) { print('Problem: Latitudes not identical')}
+  if(sstdate-chldate!=0) { logprint('Problem: Dates not identical')}
+  if(sum(sstlon-chllon)!=0) { logprint('Problem: Longitudes not identical')}
+  if(sum(sstlat-chllat)!=0) { logprint('Problem: Latitudes not identical')}
   
   
   #Everything OK, close Chla and SST NetCDF files
   close.ncdf(sstnc)
   close.ncdf(chlnc)
   
+  #Try to do this all in raster? Remove GMT dependency
   # Regrid Chla and SST to 0.25 degrees
   logprint("Regridding Chlorophyll and SST data")
   gmt.system(paste('grdfilter ',chlfile,'?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/chlgridded_grdfilter.grd',sep=''))
@@ -149,13 +150,14 @@ get_EnvData <- function() {
   rasterDF <- raster(spsst)
   
   #Download SSH and change dataframe format for GMT to regrid the same way to match other variables
-  # The primary data place is AVISO, and we will pull 30 days centered on the mid-point day of the latest Chla file. 
+  # The primary data place is AVISO, and we will pull 16 days centered on the mid-point day of the latest Chla file. 
   #
   #>>>>>>>MAY NEED TO CHANGE THIS AS THERE IS DELAY<<<<<<<<
   #
   #
   # Normally will pull from near-real-time data, unless running particular month where we need delayed time data
   # First try near real time data
+  #IF THIS FAILS!!! Try the username and pass aviso-users:grid2010 as this may have changed?
   dapurl = 'http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-nrt-over30d-global-allsat-msla-h'
   
   #Load SSH OpenDAP file from AVISO
@@ -171,6 +173,7 @@ get_EnvData <- function() {
   TimeStartIdx <- which(sshdates==as.character(sstdate-16)) #16 days before SST and Chla
   SLAIdx <- which(names(sshnc$var)=='sla') # find variable index for SLA
   
+  #This subroutine not exactly foolproof, may fail...
   if (length(TimeStartIdx) == 0) {
     logprint('Cannot find date in NRT, need to using delayed time product')
     close(sshnc)
@@ -184,6 +187,7 @@ get_EnvData <- function() {
   }
   
   #Get data slice
+  #If you change grid you will have to change counts for lon and lat
   sshslice = get.var.ncdf( sshnc, 'sla', start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(81,77,16))
   
   #Get lat and long, need to subtract 0.125 to fix pixel center vs left corner mismatch with SST and Chla
@@ -231,6 +235,7 @@ get_EnvData <- function() {
   colnames(sshrms) = c('longitude','latitude','sshrms')
   colnames(bathy) = c('longitude','latitude','bathy','bathyrms')
   
+  #Can we turn this into a function do have a dynamic number of merges?
   modelin = merge(merge(merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude')),ssh,by=c('longitude','latitude')),sshrms,by=c('longitude','latitude'))
   colnames(modelin) = c('longitude','latitude','bathy','bathyrms','sst','chl','ssh','sshrms')
   
