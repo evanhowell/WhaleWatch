@@ -39,7 +39,8 @@ logprint("Finished running function predict_GAMM")
 
 #Now run function to make the plots
 logprint("Running function plot_GAMMRaster")
-plot_GAMMRaster(predictvec)
+imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,percent=predictvec$percent,month=predictvec$month,year=predictvec$year)
+plot_GAMMRaster(imagevec)
 logprint("Finished running function plot_GAMMRaster")
 
 #Close up temp logfile, then rename logfile from templog to dated logfile
