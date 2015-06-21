@@ -58,6 +58,11 @@ predict_GAMM <- function(factorfile) {
   predictvec = cbind(predfactors,fitmean,sdfit)
   predictvec$percent = predictvec$fitmean*100
   
+  #Do upper and lower ranges
+  predictvec$upper<-100*(predictvec$fitmean+predictvec$sdfit)
+  predictvec$lower<-100*(predictvec$fitmean-predictvec$sdfit)
+  predictvec$lower[predictvec$lower<0]<-0
+  
   #Write a .csv file with all data if desired for comparisons
   logprint(paste("Writing predictions to file",predictfile))
   write.csv(predictvec,predictfile)
