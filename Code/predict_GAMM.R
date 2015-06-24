@@ -8,7 +8,7 @@ predict_GAMM <- function(factorfile) {
      
   pkgTest("mgcv")
   pkgTest("sp")
-  pkgTest("rgdal")
+  #pkgTest("rgdal") #nor needed unless using Excel?
   pkgTest("raster")
   pkgTest("gmt")
   
@@ -57,6 +57,11 @@ predict_GAMM <- function(factorfile) {
   sdfit = apply(fit,1,sd)
   predictvec = cbind(predfactors,fitmean,sdfit)
   predictvec$percent = predictvec$fitmean*100
+  
+  #Do upper and lower ranges
+  predictvec$upper<-100*(predictvec$fitmean+predictvec$sdfit)
+  predictvec$lower<-100*(predictvec$fitmean-predictvec$sdfit)
+  predictvec$lower[predictvec$lower<0]<-0
   
   #Write a .csv file with all data if desired for comparisons
   logprint(paste("Writing predictions to file",predictfile))

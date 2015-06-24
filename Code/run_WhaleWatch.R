@@ -3,7 +3,8 @@
 
 #Set working directories
 #setwd('/Users/evan.howell/lib/git/WhaleWatch') #Change this when making live
-setwd('/Users/ehowell/git/WhaleWatch') #Change this when making live
+#setwd('/Users/ehowell/git/WhaleWatch') #Change this when making live
+setwd('~/Dropbox/Documents/R/Blue_whales/Operational') #Change this when making live
 path = getwd()
 codedir = paste(path,'/Code',sep='')
 modeldir = paste(path,'/ModelRuns',sep='')
@@ -39,13 +40,30 @@ logprint("Finished running function predict_GAMM")
 
 #Now run function to make the plots
 logprint("Running function plot_GAMMRaster")
-plot_GAMMRaster(predictvec)
+
+#First plot percent prediction
+imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Mean=predictvec$percent,month=predictvec$month,year=predictvec$year)
+plot_GAMMRaster(imagevec)
+
+#Now plot Upper range
+imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Upper=predictvec$upper,month=predictvec$month,year=predictvec$year)
+plot_GAMMRaster(imagevec)
+
+#now plot Lower range
+imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Lower=predictvec$lower,month=predictvec$month,year=predictvec$year)
+plot_GAMMRaster(imagevec)
+
+#now plot SD
+imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,SD=predictvec$sdfit*100,month=predictvec$month,year=predictvec$year)
+plot_GAMMRaster(imagevec)
 logprint("Finished running function plot_GAMMRaster")
 
 #Close up temp logfile, then rename logfile from templog to dated logfile
 newlogfile = paste('logs/log',format(Sys.time(), '%Y-%m-%dT%H-%M-%S'),'.log',sep='')
 
 logprint(paste("Closing temporary logfile and renaming to file ", newlogfile))
+
+logprint("DONE!!!! Check Images, Data, and Predictions directories")
 close(logfile)
 
 file.rename(templogfile, newlogfile)
