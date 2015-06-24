@@ -1,19 +1,250 @@
-library(gmt)
-gmt.system(grdpaste)
-gmt.system("grdpaste")
-?system
-system("grdpaste")
-system("echo $PATH")
-system("echo whoami")
-system("whoami")
-system("export PATH="/usr/local/bin/$PATH")
-system("export PATH=\"/usr/local/bin/$PATH\"")
-system("echo $PATH")
-R_ENVIRON
-sys.getenv()
-Sys.getenv()
-Sys.getenv("R_ENVIRON")
-Sys.getenv("PATH")
-exit
-quit
+colnames(modelin) = c("lon","lat","bathy","sst","chl","ssh","sshrms")modelin$month = chlmonth #month derived from chlorophyll filewrite.csv(modelin,sprintf("Data/WhaleWatchFactors_%d_%02d.csv",chlyear,chlmonth),row.names=FALSE)
+pkgTest('gmt')
+paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+initialtime = '2009-01-16T00:00:00Z'
+paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+dapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')
+chlfile = paste(tmpdir,'/chl.nc',sep='')
+tmpdir
+unlink(tmpdir)
+unlink(tmpdir,recursive=TRUE)
+tmpdir = paste('tmp.',as.integer(Sys.time()),sep='')dir.create(tmpdir, showWarnings = TRUE)
+initialtime = '2009-01-16T00:00:00Z'
+dapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')chlfile = paste(tmpdir,'/chl.nc',sep='')idchl = curldap(dapurl, chlfile)
+if(idchl!=0) {	print(paste('Download failed, exit code =',id,'Trying secondary source'))}
+chlnc = open.ncdf(chlfile,write=FALSE)chldate = as.Date(get.var.ncdf(chlnc,'time')/(60*60*24),origin='1970-01-01')chlmonth = as.integer(format(chldate,'%m'))chlyear = as.integer(format(chldate,'%Y'))chllon=get.var.ncdf(chlnc,'longitude')chllat=get.var.ncdf(chlnc,'latitude')
+erdtime = format(chldate,'%Y-%m-%dT00:00:00Z')
+erdtime
+sstfile = paste(tmpdir,'/sst.nc',sep='')dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMBsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')idsst = curldap(dapurl, sstfile)
+if(idsst!=0) {	print(paste('Download failed, exit code =',id,'Trying secondary source'))}sstnc = open.ncdf(sstfile,write=FALSE)sstdate = as.Date(get.var.ncdf(sstnc,'time')/(60*60*24),origin='1970-01-01')sstlon=get.var.ncdf(sstnc,'longitude')sstlat=get.var.ncdf(sstnc,'latitude')
+if(sstdate-chldate!=0) { print('Problem: Dates not identical')}if(sum(sstlon-chllon)!=0) { print('Problem: Longitudes not identical')}if(sum(sstlat-chllat)!=0) { print('Problem: Latitudes not identical')}
+sstfile = paste(tmpdir,'/sst.nc',sep='')dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')idsst = curldap(dapurl, sstfile)#Check id to make sure it exits cleanly (e.g., id=0)if(idsst!=0) {	print(paste('Download failed, exit code =',id,'Trying secondary source'))}sstnc = open.ncdf(sstfile,write=FALSE)sstdate = as.Date(get.var.ncdf(sstnc,'time')/(60*60*24),origin='1970-01-01')sstlon=get.var.ncdf(sstnc,'longitude')sstlat=get.var.ncdf(sstnc,'latitude')
+if(sstdate-chldate!=0) { print('Problem: Dates not identical')}if(sum(sstlon-chllon)!=0) { print('Problem: Longitudes not identical')}if(sum(sstlat-chllat)!=0) { print('Problem: Latitudes not identical')}
+close.ncdf(sstnc)close.ncdf(chlnc)
+gmt.system(paste('grdfilter ',chlfile,'?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/chlgridded_grdfilter.grd',sep=''))gmt.system(paste('grdfilter ',sstfile,'?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sstgridded_grdfilter.grd',sep='')) #using a median filter. #Export as ascii to load into Rgmt.system(paste('grd2xyz ',tmpdir,'/chlgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/chl.xyz',sep=''),append=F)gmt.system(paste('grd2xyz ',tmpdir,'/sstgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/sst.xyz',sep=''),append=F)
+outfile = paste(tmpdir,'/sshd.nc',sep='')dapurl = 'http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-nrt-over30d-global-allsat-msla-h'#Load SSH OpenDAP file from AVISOsshnc = open.ncdf(dapurl,write=FALSE)#Get all dates in NetCDF filesshdates = as.Date(get.var.ncdf(sshnc,'time'),origin='1950-01-01')
+LonStartIdx <- which( sshnc$dim$lon$vals-0.125 == 225)LatStartIdx <- which( sshnc$dim$lat$vals-0.125 == 30)
+TimeStartIdx <- which(sshdates==as.character(sstdate-16))
+SLAIdx <- which(names(sshnc$var)=='sla')
+sshnc$dim$lon$vals
+sstdate-16
+TimeStartIdx
+sshslice = get.var.ncdf( sshnc, 'sla', start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(81,77,16))
+sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))chl = read.table(paste(tmpdir,'/chl.xyz',sep=''))bathy = read.table('Data/bathy.txt')bathy = bathy[,c(5,6,1)] #Only take bathy, long, and lat
+colnames(sst) = c('longitude','latitude','sst')colnames(chl) = c('longitude','latitude','chl')
+colnames(bathy) = c('longitude','latitude','bathy')
+a=merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude'))
+summary(a)
+colnames(modelin) = c('lon','lat','bathy','sst','chl')
+summary(a)
+write.csv(modelin,'testww-2009-01.csv',row.names=FALSE)
+write.csv(a,'testww-2009-01.csv',row.names=FALSE)
+b = read.csv('Data/WhaleWatchFactors_1_2009.csv')
+summary(a)
+summary(b)
+plot(a$chl,b$chl)
+d = merge(a,b,by=c('longitude','latitude'))
+cols = colnames(b)
+cols
+cols[1:2] = c('latitude','longitude')
+cols
+colnames(b) = cols
+summary(b)
+d = merge(a,b,by=c('longitude','latitude'))
+summary(d)
+plot(d$sst.x,d$sst.y)
+plot(d$chl.x,d$chl.y)
+plot(d$bathy.x,d$bathy.y)
+erdtime
+as.numeric(erdtime)
+todaydate
+todaydate-erdtime
+class(todaydate)
+Sys.time()-erdtime
+Sys.time()
+as.Date(Sys.time())
+as.Date(Sys.time())-erdtime
+as.Date(Sys.time())-as.Date(erdtime)
+if (as.Date(Sys.time())-as.Date(erdtime)) > 30 {print('dt')}
+if (as.Date(Sys.time())-as.Date(erdtime) > 30) {print('dt')}
+if (as.Date(Sys.time())-as.Date(erdtime) > 30) {	print('data date is more than 30 days older than today, using delayed time product)}	sshtype = 'dt-global-allsat'} else {	print('Using near-real-time time product)}	sshtype = 'nrt-over30d'}
+if (as.Date(Sys.time())-as.Date(erdtime) > 30) {	print('data date is more than 30 days older than today, using delayed time product')	sshtype = 'dt-global-allsat'} else {	print('Using near-real-time time product')	sshtype = 'nrt-over30d'}
+if (as.Date(Sys.time())-as.Date(erdtime) > 30) {	print('data date is more than 30 days older than today, using delayed time product')	sshtype = 'dt'} else {	print('Using near-real-time time product')	sshtype = 'nrt-over30d'}
+sshtype
+paste('http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-',sshtype,'-global-allsat-msla-h',sep='')
+dapurl = paste('http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-',sshtype,'-global-allsat-msla-h',sep='')
+sshnc = open.ncdf(dapurl,write=FALSE)
+sshdates = as.Date(get.var.ncdf(sshnc,'time'),origin='1950-01-01')
+length(sshdates)
+TimeStartIdx <- which(sshdates==as.character(sstdate-16))
+TimeStartIdx
+sshdates[TimeStartIdx]
+SLAIdx <- which(names(sshnc$var)=='sla')
+sshslice = get.var.ncdf( sshnc, 'sla', start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(81,77,16))
+sshlon=get.var.ncdf(sshnc,'lon',start=c(LonStartIdx),count=c(81))-0.125 sshlat=get.var.ncdf(sshnc,'lat',start=c(LatStartIdx),count=c(77))-0.125
+close.ncdf(sshnc)
+sshgrid = apply(sshslice, c(1,2), mean)
+a = sshgrid
+dim(a)
+dim(a) = c(6237,1) #81*77ssh=data.frame(rep(sshlon,77), rep(sshlat,81),a)
+summary(ssh)
+colnames(ssh) = c('longitude','latitude','ssh')
+#calculate SD for sshrsd<-focalsd(sshgrid,min(sshlon),max(sshlon),min(sshlat),max(sshlat),5,5)#rsd<-focalsd(sshvals,min(sshlat),max(sshlat),min(sshlon),max(sshlon),5,5)rsdregrid<-raster::resample(rsd, rasterDF, method='bilinear')rnc = writeRaster(rsdregrid,filename=paste(tmpdir,'/sshsd-working.nc',sep=''),format='CDF',overwrite=TRUE) # Write to netcdf file
+gmt.system(paste('grd2xyz ',tmpdir,'/sshsd-working.nc',sep=''),file=paste(tmpdir,'/sshsd-working.xyz',sep=''))gmt.system(paste('blockmean ',tmpdir,'/sshsd-working.xyz -Rd225/245/30/49 -I0.25/0.25',sep=''),file=paste(tmpdir,'/sshsd-blockmean.xyz',sep=''))gmt.system(paste('grdfilter ',tmpdir,'/sshsd-working.nc?layer -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sshsd_grdfilter.grd',sep=''))gmt.system(paste('grd2xyz ',tmpdir,'/sshsd_grdfilter.grd',sep=''),file=paste(tmpdir,'/sshsd.xyz',sep=''))#Combine sst, chl, bathy into one filesshrms = read.table(paste(tmpdir,'/sshsd.xyz',sep=''))
+colnames(sshrms) = c('longitude','latitude','sshrms')
+modelin = merge(merge(merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude')),ssh,by=c('longitude','latitude')),sshrms,by=c('longitude','latitude'))colnames(modelin) = c('lon','lat','bathy','sst','chl','ssh','sshrms')
+summary(modelin)
+summary(b)
+colnames(modelin) = c('longitude','latitude','bathy','sst','chl','ssh','sshrms')
+modelin$month = chlmonth #month derived from chlorophyll file
+d = merge(b,modelin,by=c('longitude','latitude'))
+summary(d)
+plot(d$sst.x,d$sst.y)
+plot(d$chl.x,d$chl.y)
+plot(d$sshd,d$ssh)
+plot(d$sshdrms,d$sshrms)
+plot(d$sshrms.x,d$sshrms.y)
+write.csv(ssh,'ssh.csv',row.names=F)
+ssh=data.frame(rep(sshlon,77), rep(sshlat,81),t(a))
+write.csv(ssh,'ssh.csv',row.names=F)
+a = t(sshgrid)dim(a) = c(6237,1) #81*77ssh=data.frame(rep(sshlon,77), rep(sshlat,81),a)
+write.csv(ssh,'ssh.csv',row.names=F)
+a=sshgrid
+write.csv(a,'ssh.csv',row.names=F)
+write.csv(a,'ssh.csv',row.names=F,header=F)
+?write.csv
+write.csv(a,'ssh.csv',row.names=F,col.names=F)
+dim(a) = c(6237,1) #81*77
+write.csv(a,'ssh.csv',row.names=F,col.names=F)
+write.csv(a,'ssh.csv',row.names=F)
+?rep
+sshlon[1:5]
+rep(sshlon[1:5],times=1,length=6237)
+rep(sshlon[1:5],times=1,length=25)
+rep(sshlon[1:5],times=5)
+rep(sshlon[1:5],each=5)
+ssh=data.frame(rep(sshlon,each=77), rep(sshlat,81),a) #make matrix,
+sshdata[1:10,]
+ssh[1:10,]
+plot(d$sshdrms,d$sshrms)
+summary(d)
+plot(d$sshrms,d$sshrms.y)
+plot(d$ssh.x,d$ssh.y)
+plot(d$sshd,d$ssh)
+plot(d$sshd,ssh$a)
+plot(d$ssh,ssh$a)
+write.csv(ssh,'sshfull.csv',row.names=F)
+image(a)
+sshgrid = apply(sshslice, c(1,2), mean)
+image(sshgrid)
+a = sshgrid
+dim(a) = c(6237,1) #81*77 shape is now Bottom to top, Left to right (in GMT -ZBLa)ssh=data.frame(rep(sshlon,each=77), rep(sshlat,81),a) #make matr
+write.csv(ssh,'sshfull.csv',row.names=F)
+a = sshgrid[1:10,]
+a = sshgrid
+image(a)
+image(a[1:10,])
+image(a[1:50,])
+image(a[1:80,])
+dim(a) = c(6237,1)
+a[1:10]
+81*77
+a[1,2]
+sshgrid[1,2]
+a[82]
+sshgrid = apply(sshslice, c(1,2), mean)#Make data frame from reshaped grid and lon/lata = sshgriddim(a) = c(6237,1) #81*77 shape is now Bottom to top, Left to right (in GMT -ZBLa)ssh=data.frame(rep(sshlon,each=77), rep(sshlat,81),a)
+write.csv(ssh,'sshfull.csv',row.names=F)
+ssh=data.frame(rep(sshlon,77), rep(sshlat,each=81),a)
+write.csv(ssh,'sshfull.csv',row.names=F)
+ssh[1:10,]
+colnames(ssh) = c('longitude','latitude','ssh')
+ssh[1:10,]
+plot(b$sshd)
+plot(b$sshd,ssh[,3])
+modelin = merge(merge(merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude')),ssh,by=c('longitude','latitude')),sshrms,by=c('longitude','latitude'))colnames(modelin) = c('longitude','latitude','bathy','sst','chl','ssh','sshrms')
+modelin$month = chlmonth #month derived from chlorophyll file
+summary(b)
+summary(modelin)
+b[1:10,]
+modelin[1:10,]
+d = merge(b,modelin,by=c('longitude','latitude'))
+summary(d)
+plot(d$sst.x,d$sst.y)
+plot(d$chl.x,d$chl.y)
+par(mfrow=c(3,2))
+plot(d$bathy.x,d$bathy.y)
+par(mfrow=c(3,2))
+plot(d$bathy.x,d$bathy.y)
+par(mfrow=c(3,2))
+?plot
+source('plot_Env.R')
+source('plot_Env.R')
+tmpdir = paste('tmp.',as.integer(Sys.time()),sep='')dir.create(tmpdir, showWarnings = TRUE)
+initialtime = '2009-04-16T00:00:00Z' #use this to get the last available ERDDAP filedapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')chlfile = paste(tmpdir,'/chl.nc',sep='')idchl = curldap(dapurl, chlfile)
+if(idchl!=0) {	print(paste('Download failed, exit code =',id,'Trying secondary source'))}
+chlnc = open.ncdf(chlfile,write=FALSE)chldate = as.Date(get.var.ncdf(chlnc,'time')/(60*60*24),origin='1970-01-01')chlmonth = as.integer(format(chldate,'%m'))chlyear = as.integer(format(chldate,'%Y'))chllon=get.var.ncdf(chlnc,'longitude')chllat=get.var.ncdf(chlnc,'latitude')erdtime = format(chldate,'%Y-%m-%dT00:00:00Z')
+sstfile = paste(tmpdir,'/sst.nc',sep='')dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')idsst = curldap(dapurl, sstfile)#Check id to make sure it exits cleanly (e.g., id=0)if(idsst!=0) {	print(paste('Download failed, exit code =',id,'Trying secondary source'))}
+sstnc = open.ncdf(sstfile,write=FALSE)sstdate = as.Date(get.var.ncdf(sstnc,'time')/(60*60*24),origin='1970-01-01')sstlon=get.var.ncdf(sstnc,'longitude')sstlat=get.var.ncdf(sstnc,'latitude')#Do some sanity checks on dates and locationsif(sstdate-chldate!=0) { print('Problem: Dates not identical')}if(sum(sstlon-chllon)!=0) { print('Problem: Longitudes not identical')}if(sum(sstlat-chllat)!=0) { print('Problem: Latitudes not identical')}
+close.ncdf(sstnc)close.ncdf(chlnc)
+gmt.system(paste('grdfilter ',chlfile,'?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/chlgridded_grdfilter.grd',sep=''))gmt.system(paste('grdfilter ',sstfile,'?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sstgridded_grdfilter.grd',sep='')) #using a median filter. #Export as ascii to load into Rgmt.system(paste('grd2xyz ',tmpdir,'/chlgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/chl.xyz',sep=''),append=F)gmt.system(paste('grd2xyz ',tmpdir,'/sstgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/sst.xyz',sep=''),append=F)
+if (as.Date(Sys.time())-as.Date(erdtime) > 30) {	print('data date is more than 30 days older than today, using delayed time product')	sshtype = 'dt'} else {	print('Using near-real-time time product')	sshtype = 'nrt-over30d'}
+outfile = paste(tmpdir,'/sshd.nc',sep='')dapurl = paste('http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-',sshtype,'-global-allsat-msla-h',sep='')#Load SSH OpenDAP file from AVISOsshnc = open.ncdf(dapurl,write=FALSE)#Get all dates in NetCDF filesshdates = as.Date(get.var.ncdf(sshnc,'time'),origin='1950-01-01')#Find initial indices to pull data chunk. Pixels are centered and SST and Chl are not so subtracting 0.125 to get left edge of pixel. May want to look at this but shouldn't affect model.LonStartIdx <- which( sshnc$dim$lon$vals-0.125 == 225)LatStartIdx <- which( sshnc$dim$lat$vals-0.125 == 30)TimeStartIdx <- which(sshdates==as.character(sstdate-16)) #16 days before SST and ChlaSLAIdx <- which(names(sshnc$var)=='sla') # find variable index for SLA
+sshslice = get.var.ncdf( sshnc, 'sla', start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(81,77,16))#Get lat and long, need to subtract 0.125 to fix pixel center vs left corner mismatch with SST and Chlasshlon=get.var.ncdf(sshnc,'lon',start=c(LonStartIdx),count=c(81))-0.125 sshlat=get.var.ncdf(sshnc,'lat',start=c(LatStartIdx),count=c(77))-0.125close.ncdf(sshnc)#Do average in third (time) dimensionsshgrid = apply(sshslice, c(1,2), mean)#Make data frame from reshaped grid and lon/lata = sshgriddim(a) = c(6237,1) #81*77 shape is now Bottom to top, Left to right (in GMT -ZBLa)ssh=data.frame(rep(sshlon,77), rep(sshlat,each=81),a) #m
+write.csv(ssh,'sshfull.csv',row.names=F)
+sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))chl = read.table(paste(tmpdir,'/chl.xyz',sep=''))bathy = read.table('Data/bathy.txt')bathy = bathy[,c(5,6,1)] #Only take bathy, long, and lat#calculate SD for sshrsd<-focalsd(sshgrid,min(sshlon),max(sshlon),min(sshlat),max(sshlat),5,5)#rsd<-focalsd(sshvals,min(sshlat),max(sshlat),min(sshlon),max(sshlon),5,5)rsdregrid<-raster::resample(rsd, rasterDF, method='bilinear')rnc = writeRaster(rsdregrid,filename=paste(tmpdir,'/sshsd-working.nc',sep=''),format='CDF',overwrite=TRUE) # Write to netcdf file#run grd2xyz through blockmean to regrid to 0.25x0.25 resolution.gmt.system(paste('grd2xyz ',tmpdir,'/sshsd-working.nc',sep=''),file=paste(tmpdir,'/sshsd-working.xyz',sep=''))gmt.system(paste('blockmean ',tmpdir,'/sshsd-working.xyz -Rd225/245/30/49 -I0.25/0.25',sep=''),file=paste(tmpdir,'/sshsd-blockmean.xyz',sep=''))gmt.system(paste('grdfilter ',tmpdir,'/sshsd-working.nc?layer -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sshsd_grdfilter.grd',sep=''))gmt.system(paste('grd2xyz ',tmpdir,'/sshsd_grdfilter.grd',sep=''),file=paste(tmpdir,'/sshsd.xyz',sep=''))#Combine sst, chl, bathy into one filesshrms = read.table(paste(tmpdir,'/sshsd.xyz',sep=''))
+colnames(sst) = c('longitude','latitude','sst')colnames(chl) = c('longitude','latitude','chl')colnames(ssh) = c('longitude','latitude','ssh')colnames(sshrms) = c('longitude','latitude','sshrms')colnames(bathy) = c('longitude','latitude','bathy')
+modelin = merge(merge(merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude')),ssh,by=c('longitude','latitude')),sshrms,by=c('longitude','latitude'))colnames(modelin) = c('longitude','latitude','bathy','sst','chl','ssh','sshrms')modelin$month = chlmonth #month derived from chlorophyll file
+b = read.csv('Data/WhaleWatchFactors_4_2009.csv')
+d = merge(b,modelin,by=c('longitude','latitude'))
+summary(b)
+cols = colnames(b)
+colnames(b[1:2]) = c('longitude','latitude')
+summary(b)
+colnames(b)
+colnames(b[1:2])
+colnames(b[1:2]) = c('longitude','latitude')
+colnames(b[1:2])
+cols[1:2] = c('longitude','latitude')
+colnames(b) = cols
+summary(b)
+d = merge(b,modelin,by=c('longitude','latitude'))
+summary(d)
+summary(b)
+summary(modelin)
+cols[1:2] = c('latitude','longitude')
+colnames(b) = cols
+summary(b)
+d = merge(b,modelin,by=c('longitude','latitude'))
+summary(d)
+source('plot_Env.R')
+unlink(tmpdir,recursive=TRUE)
+tmpdir = paste('tmp.',as.integer(Sys.time()),sep='')dir.create(tmpdir, showWarnings = TRUE)#http://coastwatch.pfeg.noaa.gov/erddap/convert/time.txt?n=473472000&units=seconds%20since%201970-01-01T00:00:00Z#Get Environmental variables. # First is to grab Chlorophyll data as this is the limiting factor. First step is to try from ERDDAP. If this fails can grab from other sources.initialtime = 'last' #use this
+dapurl=paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWchlamday.nc?chlorophyll[(',initialtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')chlfile = paste(tmpdir,'/chl.nc',sep='')idchl = curldap(dapurl, chlfile)#Check id to make sure it exits cleanly (e.g., id=0)if(idchl!=0) {	print(paste('Download failed, exit code =',id,'Trying secondary source'))}#Read in chl.nc file to get month and year to load other data fileschlnc = open.ncdf(chlfile,write=FALSE)chldate = as.Date(get.var.ncdf(chlnc,'time')/(60*60*24),origin='1970-01-01')chlmonth = as.integer(format(chldate,'%m'))chlyear = as.integer(format(chldate,'%Y'))chllon=get.var.ncdf(chlnc,'longitude')chllat=get.var.ncdf(chlnc,'latitude')erdtime = format(chldate,'%Y-%m-%dT00:00:00Z')
+sstfile = paste(tmpdir,'/sst.nc',sep='')dapurl = paste('http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMWsstdmday.nc?sst[(',erdtime,'):1:(',erdtime,')][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]',sep='')idsst = curldap(dapurl, sstfile)#Check id to make sure it exits cleanly (e.g., id=0)if(idsst!=0) {	print(paste('Download failed, exit code =',id,'Trying secondary source'))}sstnc = open.ncdf(sstfile,write=FALSE)sstdate = as.Date(get.var.ncdf(sstnc,'time')/(60*60*24),origin='1970-01-01')sstlon=get.var.ncdf(sstnc,'longitude')sstlat=get.var.ncdf(sstnc,'latitude')
+if(sstdate-chldate!=0) { print('Problem: Dates not identical')}if(sum(sstlon-chllon)!=0) { print('Problem: Longitudes not identical')}if(sum(sstlat-chllat)!=0) { print('Probl
+em: Latitudes not identical')}
+close.ncdf(sstnc)close.ncdf(chlnc)
+gmt.system(paste('grdfilter ',chlfile,'?chlorophyll -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/chlgridded_grdfilter.grd',sep=''))gmt.system(paste('grdfilter ',sstfile,'?sst -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sstgridded_grdfilter.grd',sep='')) #using a median filter. #Export as ascii to load into Rgmt.system(paste('grd2xyz ',tmpdir,'/chlgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/chl.xyz',sep=''),append=F)gmt.system(paste('grd2xyz ',tmpdir,'/sstgridded_grdfilter.grd',sep=''),file=paste(tmpdir,'/sst.xyz',sep=''),append=F)
+if (as.Date(Sys.time())-as.Date(erdtime) > 30) {	print('data date is more than 30 days older than today, using delayed time product')	sshtype = 'dt'} else {	print('Using near-real-time time product')	sshtype = 'nrt-over30d'}
+erdtime
+if (as.Date(Sys.time())-as.Date(erdtime) > 90) {	print('data date is more than 30 days older than today, using delayed time product')	sshtype = 'dt'} else {	print('Using near-real-time time product')	sshtype = 'nrt-over30d'}
+outfile = paste(tmpdir,'/sshd.nc',sep='')dapurl = paste('http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-',sshtype,'-global-allsat-msla-h',sep='')#Load SSH OpenDAP file from AVISOsshnc = open.ncdf(dapurl,write=FALSE)#Get all dates in NetCDF filesshdates = as.Date(get.var.ncdf(sshnc,'time'),origin='1950-01-01')
+sshdate[1]
+sshdates[1]
+sshdates[1]+45
+if (as.Date(Sys.time())-as.Date(erdtime) > 45) {	print('data date is more than 45 days older than today, using delayed time product')	sshtype = 'dt'} else {	print('Using near-real-time time product')	sshtype = 'nrt-over30d'}
+LonStartIdx <- which( sshnc$dim$lon$vals-0.125 == 225)LatStartIdx <- which( sshnc$dim$lat$vals-0.125 == 30)TimeStartIdx <- which(sshdates==as.character(sstdate-16)) #16 days before SST and ChlaSLAIdx <- which(names(sshnc$var)=='sla') # find vari
+sshslice = get.var.ncdf( sshnc, 'sla', start=c(LonStartIdx,LatStartIdx,TimeStartIdx), count=c(81,77,16))
+sshlon=get.var.ncdf(sshnc,'lon',start=c(LonStartIdx),count=c(81))-0.125 sshlat=get.var.ncdf(sshnc,'lat',start=c(LatStartIdx),count=c(77))-0.125close.ncdf(sshnc)
+sshgrid = apply(sshslice, c(1,2), mean)
+image(sshgrid)
+a = sshgriddim(a) = c(6237,1) #81*77 shape is now Bottom to top, Left to right (in GMT -ZBLa)ssh=data.frame(rep(sshlon,77), rep(sshlat,each=81),a) #make matri
+sst = read.table(paste(tmpdir,'/sst.xyz',sep=''))chl = read.table(paste(tmpdir,'/chl.xyz',sep=''))bathy = read.table('Data/bathy.txt')bathy = bathy[,c(5,6,1)] #Only take bath
+rsd<-focalsd(sshgrid,min(sshlon),max(sshlon),min(sshlat),max(sshlat),5,5)#rsd<-focalsd(sshvals,min(sshlat),max(sshlat),min(sshlon),max(sshlon),5,5)rsdregrid<-raster::resample(rsd, rasterDF, method='bilinear')rnc = writeRaster(rsdregrid,filename=paste(tmpdir,'/sshsd-working.nc',sep=''),format='CDF',overwrite=TRUE) # Write to netcdf file#run grd2xyz through blockmean to regrid to 0.25x0.25 resolution.gmt.system(paste('grd2xyz ',tmpdir,'/sshsd-working.nc',sep=''),file=paste(tmpdir,'/sshsd-working.xyz',sep=''))gmt.system(paste('blockmean ',tmpdir,'/sshsd-working.xyz -Rd225/245/30/49 -I0.25/0.25',sep=''),file=paste(tmpdir,'/sshsd-blockmean.xyz',sep=''))gmt.system(paste('grdfilter ',tmpdir,'/sshsd-working.nc?layer -D0 -Fm0.5 -R225/245/30N/49N -I0.25/0.25 -G',tmpdir,'/sshsd_grdfilter.grd',sep=''))gmt.system(paste('grd2xyz ',tmpdir,'/sshsd_grdfilter.grd',sep=''),file=paste(tmpdir,'/sshsd.xyz',sep=''))#Combine sst, chl, bathy into one filesshrms = read.table(paste(tmpdir,'/sshsd.xyz',sep=''))
+colnames(sst) = c('longitude','latitude','sst')colnames(chl) = c('longitude','latitude','chl')colnames(ssh) = c('longitude','latitude','ssh')colnames(sshrms) = c('longitude','latitude','sshrms')colnames(bathy) = c('longitude','latitude','bathy')
+modelin = merge(merge(merge(merge(bathy,sst,by=c('longitude','latitude')),chl,by=c('longitude','latitude')),ssh,by=c('longitude','latitude')),sshrms,by=c('longitude','latitude'))colnames(modelin) = c('longitude','latitude','bathy','sst','chl','ssh','sshrms')modelin$month = chlmonth #month derived from chlorophyll filewrite.csv(modelin,sprintf('Data/WhaleWatchFactors_%d_%02d.csv',chlyear,chlmonth),row.names=FALSE)
+ch <- odbcConnect("CRED_Oracle", uid = "IWILLIAMS", pwd = "Nlzvxhgu=rlAm?~snqiqr34[")
+ch <- odbcConnect("CRED_Oracle", uid = "IWILLIAMS", pwd = "Nlzvxhgu=rlAm?~sn")
+ch <- odbcConnect("CRED_Oracle", uid = "IWILLIAMS", pwd = "Nlzvxhgu=rlAm?~sn")
+odbcConnect()
 q()
