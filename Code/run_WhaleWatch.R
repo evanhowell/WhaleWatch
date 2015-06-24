@@ -62,8 +62,9 @@ logprint("Finished running function plot_GAMMRaster")
 newlogfile = paste('logs/log',format(Sys.time(), '%Y-%m-%dT%H-%M-%S'),'.log',sep='')
 
 logprint(paste("Closing temporary logfile and renaming to file ", newlogfile))
+
+logprint("DONE!!!! Check Images, Data, and Predictions directories")
 close(logfile)
 
 file.rename(templogfile, newlogfile)
-logprint("DONE!!!! Check Images, Data, and Predictions directories")
 #sink(type = c("output", "message")) #reset all messages to STDOUT and STDERR
