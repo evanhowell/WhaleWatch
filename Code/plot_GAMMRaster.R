@@ -19,9 +19,9 @@ plot_GAMMRaster <- function(imagevec) {
   
   #Test if we are dealing with percent (fitmean) or standard dev
   #if ("percent" %in% names(imagevec)) {
-  #  titletext = 'Mean of 40 WhaleWatch models'
+  #  titletext = "Mean of 40 WhaleWatch models"
   #} else {
-  #  titletext = 'SD of 40 WhaleWatch models'
+  #  titletext = "SD of 40 WhaleWatch models"
   #}
   
   titletext = paste("40 WhaleWatch models - ",names(imagevec)[3],sep="")
@@ -34,10 +34,10 @@ plot_GAMMRaster <- function(imagevec) {
   extent(fitRaster)@xmin<-extent(fitRaster)@xmin-360 #Change Longitude extant
   extent(fitRaster)@xmax<-extent(fitRaster)@xmax-360
   
-  imageFile = paste("Images/WhaleWatch_", format(fileDate,"%Y_%m"),'_', names(imagevec)[3],".png",sep="")
+  imageFile = paste("Images/WhaleWatch_", format(fileDate,"%Y_%m"),"_", names(imagevec)[3],".png",sep="")
   
   #First plot fitmean 6.169491 7.000000
-  png(filename=imageFile, res=150,width=6.169491,height=6.9,units='in')
+  png(filename=imageFile, res=150,width=6.169491,height=6.9,units="in")
   plot(fitRaster,legend=T,zlim=c(0,100),col=coltheme$regions$col,main=titletext,xlim=c(-134.6,-115),ylim=c(30,48.7))
   plot(wrld_simpl, add = T, col="light grey",border="dark grey")
   dev.off()

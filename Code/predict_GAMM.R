@@ -25,7 +25,7 @@ predict_GAMM <- function(factorfile) {
   
   logprint(paste("Loading factor file", factorfile))
   predfactors = read.csv(factorfile)
-  wwvector = vector('list')
+  wwvector = vector("list")
   
   #For SuFaindex<-GAMdataRunCCS$month>7 & GAMdataRunCCS$month<12 need to load bwhaleGAMM.sufa. Otheriwse bwhaleGAMM.wisp
   if(predfactors$month[1]>7 & predfactors$month[1]<12) {

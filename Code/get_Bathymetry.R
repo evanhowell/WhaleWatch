@@ -94,7 +94,7 @@ get_Bathymetry <- function() {
   gmt.system("grd2xyz sd_blockmean_masked.grd", file="bathyrms.xyz")
   
   #Prepare text file for combining all variables
-  depthfiltered = read.table('depth_filtered.xyz')
+  depthfiltered = read.table("depth_filtered.xyz")
   sd = read.table("bathyrms.xyz")
   slope = read.table("slope_filtered.xyz")
   aspect = read.table("aspect_filtered.xyz")
