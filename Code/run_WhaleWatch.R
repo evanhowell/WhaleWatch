@@ -42,20 +42,20 @@ logprint("Finished running function predict_GAMM")
 logprint("Running function plot_GAMMRaster")
 
 #First plot percent prediction
-imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Mean=predictvec$percent,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec)
+imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Density=predictvec$density,month=predictvec$month,year=predictvec$year)
+plot_GAMMRaster(imagevec, "Average Probability of Occurrence")
 
 #Now plot Upper range
 imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Upper=predictvec$upper,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec)
+plot_GAMMRaster(imagevec, "Upper Estimate")
 
 #now plot Lower range
 imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Lower=predictvec$lower,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec)
+plot_GAMMRaster(imagevec, "Lower Estimate")
 
 #now plot SD
 imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,SD=predictvec$sdfit*100,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec)
+plot_GAMMRaster(imagevec, "Standard Deviation")
 logprint("Finished running function plot_GAMMRaster")
 
 #Close up temp logfile, then rename logfile from templog to dated logfile

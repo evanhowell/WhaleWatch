@@ -1,4 +1,13 @@
 predict_GAMM <- function(factorfile) {
+  # Runs predictions for the 40 models from the correct winter-spring (wisp) or
+  # summer-fall (sufa) time period
+  #
+  # Args:
+  #   factorfile: the environmental data needed by the model to run predictions
+  #
+  # Returns:
+  #   predictvec: the mean, SD, lower, and upper bound predictions from the 40 models.
+
   #Load required libraries. Function pkgTest is in the file Code/load_Functions.R and should have been loaded. If not test here and load file.
   
   if(exists("pkgTest")==FALSE) {
@@ -58,6 +67,16 @@ predict_GAMM <- function(factorfile) {
   predictvec = cbind(predfactors,fitmean,sdfit)
   predictvec$percent = predictvec$fitmean*100
   
+  #Calculate density from predicted "presence". The equation is:
+  # density = uP/(sum(uP)*E*S
+  # uP = the mean predicted presence from the 40 models
+  # E = the number of Blue Whales in the system (currently 1647)
+  # S = the monthly scaling factor
+  # Set up the variables
+  E<-1647
+  Sarray<-c(0.03608,0.02821,0.04903,0.11700,0.22376,0.49830,0.67260,0.92464,0.91957,0.76547,0.34197,0.14138)
+  S<-Sarray[predfactors$month[1]]
+  predictvec$density<-predictvec$fitmean/sum(predictvec$fitmean,na.rm=T)*E*S
   #Do upper and lower ranges
   predictvec$upper<-100*(predictvec$fitmean+predictvec$sdfit)
   predictvec$lower<-100*(predictvec$fitmean-predictvec$sdfit)

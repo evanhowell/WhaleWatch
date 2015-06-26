@@ -1,18 +1,23 @@
-#This function downloads STRM_30 PLUS bathymetry and runs a median filter on the data over the desired grid size, 0.25 degrees. 
-#It then gets the SD within each cell using a mean filter (as the only way to get the SD), outputting files with both depth and SD and just SD.
-#Therefore, it is getting depth with a median filter and then the SD of the depth on the cell.
+#This function downloads STRM_30 PLUS bathymetry and runs a median filter on 
+# the data over the desired grid size, 0.25 degrees. 
+#It then gets the SD within each cell using a mean filter (as the only way to 
+# get the SD), outputting files with both depth and SD and just SD.
+#Therefore, it is getting depth with a median filter and then the SD of the 
+#depth on the cell.
+#
 #Updated 08/14/2014
 
-# IMPORTANT - The script assumes that it is in the correct parent directory, and then sets relative paths from there.
+# IMPORTANT - The script assumes that it is in the correct parent directory, 
+# and then sets relative paths from there.
 
 #Code validated to recreate bathy.txt file on 5/11/2015 by EAH
 
 get_Bathymetry <- function() {
   #Install and load libraries if absent
   if(exists("pkgTest")==FALSE) {
-     print("Function pkgTest not found, loading file Code/load_Functions.R...")
-     source("Code/load_Functions.R")
-     }
+    print("Function pkgTest not found, loading file Code/load_Functions.R...")
+    source("Code/load_Functions.R")
+  }
      
   pkgTest("gmt")
   pkgTest("SDMTools")
