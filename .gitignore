@@ -1,2 +1,5 @@
 #Ignore all .nc files
 *.nc
+*.RData
+*.csv
+*.xyz
