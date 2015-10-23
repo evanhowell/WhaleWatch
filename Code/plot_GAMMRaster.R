@@ -29,7 +29,7 @@ plot_GAMMRaster <- function(imagevec, titletext) {
   #Make new theme
   coltheme<-PuOrTheme(rev(brewer.pal(9,"Spectral")))
   
-   #Do fit first
+  #Do fit first
   fit = imagevec[,c(1,2,3)]
   coordinates(fit) = ~longitude + latitude # Set coordinates
   gridded(fit) = TRUE # make gridded
@@ -41,7 +41,7 @@ plot_GAMMRaster <- function(imagevec, titletext) {
   
   #First plot fitmean 6.169491 7.000000
   png(filename=imageFile, res=150,width=6.169491,height=6.9,units="in")
-  plot(fitRaster,legend=T,zlim=c(0,3),col=coltheme$regions$col,main=titletext,xlim=c(-134.6,-115),ylim=c(30,48.7))
+  plot(fitRaster,legend=T,las=1,zlim=c(0,3),col=coltheme$regions$col,main=titletext,xlim=c(-134.6,-115),ylim=c(30,48.7))
   plot(wrld_simpl, add = T, col="light grey",border="dark grey")
   dev.off()
   

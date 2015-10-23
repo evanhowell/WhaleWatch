@@ -4,7 +4,7 @@
 #Set working directories
 #setwd("/Users/evan.howell/lib/git/WhaleWatch") #Change this when making live
 #setwd("/Users/ehowell/git/WhaleWatch") #Change this when making live
-setwd("~/Dropbox/Documents/R/Blue_whales/Operational") #Change this when making live
+#setwd("~/Dropbox/Documents/R/Blue_whales/Operational") #Change this when making live
 path = getwd()
 codedir = paste(path,"/Code",sep="")
 modeldir = paste(path,"/ModelRuns",sep="")
@@ -43,7 +43,7 @@ logprint("Running function plot_GAMMRaster")
 
 #First plot percent prediction
 imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Density=predictvec$density,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec, "Average Probability of Occurrence")
+plot_GAMMRaster(imagevec, "Average Density")
 
 #Now plot Upper range
 imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Upper=predictvec$upper,month=predictvec$month,year=predictvec$year)
@@ -54,7 +54,7 @@ imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitud
 plot_GAMMRaster(imagevec, "Lower Estimate")
 
 #now plot SD
-imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,SD=predictvec$sdfit*100,month=predictvec$month,year=predictvec$year)
+imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,SD=predictvec$sddens,month=predictvec$month,year=predictvec$year)
 plot_GAMMRaster(imagevec, "Standard Deviation")
 logprint("Finished running function plot_GAMMRaster")
 

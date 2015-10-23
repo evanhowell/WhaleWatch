@@ -62,10 +62,6 @@ predict_GAMM <- function(factorfile) {
   logprint("Making GAM data frame")
   gam = data.frame(wwvector)
   fit =gam[ ,substr(colnames(gam),1,1)=="f"]
-  fitmean = rowMeans(fit,na.rm=T)
-  sdfit = apply(fit,1,sd)
-  predictvec = cbind(predfactors,fitmean,sdfit)
-  predictvec$percent = predictvec$fitmean*100
   
   #Calculate density from predicted "presence". The equation is:
   # density = uP/(sum(uP)*E*S
@@ -73,13 +69,28 @@ predict_GAMM <- function(factorfile) {
   # E = the number of Blue Whales in the system (currently 1647)
   # S = the monthly scaling factor
   # Set up the variables
-  E<-1647
+  E<-1647 #Scalar for converting to density
   Sarray<-c(0.03608,0.02821,0.04903,0.11700,0.22376,0.49830,0.67260,0.92464,0.91957,0.76547,0.34197,0.14138)
-  S<-Sarray[predfactors$month[1]]
-  predictvec$density<-predictvec$fitmean/sum(predictvec$fitmean,na.rm=T)*E*S
-  #Do upper and lower ranges
-  predictvec$upper<-100*(predictvec$fitmean+predictvec$sdfit)
-  predictvec$lower<-100*(predictvec$fitmean-predictvec$sdfit)
+  S<-Sarray[predfactors$month[1]] #Scalar for converting to density
+  
+  fit2 = sweep(fit,2,colSums(fit,na.rm=T),`/`) #Apply dividing by column sum to each column
+  dens = fit2*E*S #Get densities
+  fitmean = rowMeans(fit,na.rm=T)
+  sdfit = apply(fit,1,sd)
+  predictvec = cbind(predfactors,fitmean,sdfit)
+  predictvec$percent = predictvec$fitmean*100
+  
+  densmean = rowMeans(dens,na.rm=T) #Mean run from densities
+  sddens = apply(dens,1,sd) #SD from densities
+  
+  predictvec$density<-densmean
+  predictvec$sddens<-sddens
+  
+  #predictvec$density<-predictvec$fitmean/sum(predictvec$fitmean,na.rm=T)*E*S #Old calculation of density. Exactly 1:1 match with new calculation above 10/22/15 - EAH
+  
+  #Do upper and lower ranges for density
+  predictvec$upper<-predictvec$density+predictvec$sddens
+  predictvec$lower<-predictvec$density-predictvec$sddens
   predictvec$lower[predictvec$lower<0]<-0
   
   #Write a .csv file with all data if desired for comparisons
