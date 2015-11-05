@@ -88,10 +88,16 @@ predict_GAMM <- function(factorfile) {
   
   #predictvec$density<-predictvec$fitmean/sum(predictvec$fitmean,na.rm=T)*E*S #Old calculation of density. Exactly 1:1 match with new calculation above 10/22/15 - EAH
   
-  #Do upper and lower ranges for density
-  predictvec$upper<-predictvec$density+predictvec$sddens
-  predictvec$lower<-predictvec$density-predictvec$sddens
+  #UPPER AND LOWER ESIMATES FOR PROBABLY OF OCCURRENCE!!!!
+  predictvec$upper<-100*(predictvec$fitmean+predictvec$sdfit)
+  predictvec$lower<-100*(predictvec$fitmean-predictvec$sdfit)
   predictvec$lower[predictvec$lower<0]<-0
+  
+  #UPPER AND LOWER ESIMATES FOR DENSITY!!!!
+  #Do upper and lower ranges for density
+  #predictvec$upper<-predictvec$density+predictvec$sddens
+  #predictvec$lower<-predictvec$density-predictvec$sddens
+  #predictvec$lower[predictvec$lower<0]<-0
   
   #Write a .csv file with all data if desired for comparisons
   logprint(paste("Writing predictions to file",predictfile))
