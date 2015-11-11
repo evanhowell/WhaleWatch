@@ -62,6 +62,10 @@ predict_GAMM <- function(factorfile) {
   logprint("Making GAM data frame")
   gam = data.frame(wwvector)
   fit =gam[ ,substr(colnames(gam),1,1)=="f"]
+  fitmean = rowMeans(fit,na.rm=T)
+  sdfit = apply(fit,1,sd)
+  predictvec = cbind(predfactors,fitmean,sdfit)
+  predictvec$percent = predictvec$fitmean*100
   
   #Calculate density from predicted "presence". The equation is:
   # density = uP/(sum(uP)*E*S
@@ -75,10 +79,7 @@ predict_GAMM <- function(factorfile) {
   
   fit2 = sweep(fit,2,colSums(fit,na.rm=T),`/`) #Apply dividing by column sum to each column
   dens = fit2*E*S #Get densities
-  fitmean = rowMeans(fit,na.rm=T)
-  sdfit = apply(fit,1,sd)
-  predictvec = cbind(predfactors,fitmean,sdfit)
-  predictvec$percent = predictvec$fitmean*100
+  
   
   densmean = rowMeans(dens,na.rm=T) #Mean run from densities
   sddens = apply(dens,1,sd) #SD from densities

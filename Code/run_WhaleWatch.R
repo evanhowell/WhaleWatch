@@ -42,8 +42,7 @@ logprint("Finished running function predict_GAMM")
 logprint("Running function plot_GAMMRaster")
 
 #First plot Lower range
-imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Lower=predictvec$lower,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec, "Lower")
+plot_GAMMRaster(predictvec)
 
 #now plot percent Average prediction
 imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Density=predictvec$density,month=predictvec$month,year=predictvec$year)
