@@ -71,7 +71,7 @@ plot_GAMMRaster <- function(predictvecvec) {
   plot(rasterupper,legend=T,las=1,zlim=c(0,100),col=coltheme$regions$col,main='Upper',xlim=c(-134.6,-115),ylim=c(30,48.7))
   plot(wrld_simpl, add = T, col="light grey",border="dark grey")
   
-  plot(rasterdensity,legend=T,las=1,col=coltheme$regions$col,main='Average',xlim=c(-134.6,-115),ylim=c(30,48.7))
+  plot(rasterdensity,legend=T,las=1,zlim=c(0,3),col=coltheme$regions$col,main='Average',xlim=c(-134.6,-115),ylim=c(30,48.7))
   plot(wrld_simpl, add = T, col="light grey",border="dark grey")
   mtext("Number of Whales", side=3, line=6)
   dev.off()
