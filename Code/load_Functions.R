@@ -17,10 +17,11 @@ pkgTest <- function(x)
 
 logprint <- function(msg)
 {
-  print(paste(Sys.time(),msg, sep=': '))
+  print(paste(Sys.time(),msg, sep=": "))
 }
 
-source('Code/get_Bathymetry.R')
-source('Code/get_EnvData.R')
-source('Code/predict_GAMM.R')
-source('Code/plot_GAMMRaster.R')
+#Load in the rest of the source code for the remaining functions
+source("Code/get_Bathymetry.R")
+source("Code/get_EnvData.R")
+source("Code/predict_GAMM.R")
+source("Code/plot_GAMMRaster.R")

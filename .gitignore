@@ -3,3 +3,5 @@
 *.RData
 *.csv
 *.xyz
+*.png
+gmt.*

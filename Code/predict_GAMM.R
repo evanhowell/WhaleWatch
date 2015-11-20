@@ -1,4 +1,13 @@
 predict_GAMM <- function(factorfile) {
+  # Runs predictions for the 40 models from the correct winter-spring (wisp) or
+  # summer-fall (sufa) time period
+  #
+  # Args:
+  #   factorfile: the environmental data needed by the model to run predictions
+  #
+  # Returns:
+  #   predictvec: the mean, SD, lower, and upper bound predictions from the 40 models.
+
   #Load required libraries. Function pkgTest is in the file Code/load_Functions.R and should have been loaded. If not test here and load file.
   
   if(exists("pkgTest")==FALSE) {
@@ -25,7 +34,7 @@ predict_GAMM <- function(factorfile) {
   
   logprint(paste("Loading factor file", factorfile))
   predfactors = read.csv(factorfile)
-  wwvector = vector('list')
+  wwvector = vector("list")
   
   #For SuFaindex<-GAMdataRunCCS$month>7 & GAMdataRunCCS$month<12 need to load bwhaleGAMM.sufa. Otheriwse bwhaleGAMM.wisp
   if(predfactors$month[1]>7 & predfactors$month[1]<12) {
@@ -58,10 +67,38 @@ predict_GAMM <- function(factorfile) {
   predictvec = cbind(predfactors,fitmean,sdfit)
   predictvec$percent = predictvec$fitmean*100
   
-  #Do upper and lower ranges
+  #Calculate density from predicted "presence". The equation is:
+  # density = uP/(sum(uP)*E*S
+  # uP = the mean predicted presence from the 40 models
+  # E = the number of Blue Whales in the system (currently 1647)
+  # S = the monthly scaling factor
+  # Set up the variables
+  E<-1647 #Scalar for converting to density
+  Sarray<-c(0.03608,0.02821,0.04903,0.11700,0.22376,0.49830,0.67260,0.92464,0.91957,0.76547,0.34197,0.14138)
+  S<-Sarray[predfactors$month[1]] #Scalar for converting to density
+  
+  fit2 = sweep(fit,2,colSums(fit,na.rm=T),`/`) #Apply dividing by column sum to each column
+  dens = fit2*E*S #Get densities
+  
+  
+  densmean = rowMeans(dens,na.rm=T) #Mean run from densities
+  sddens = apply(dens,1,sd) #SD from densities
+  
+  predictvec$density<-densmean
+  predictvec$sddens<-sddens
+  
+  #predictvec$density<-predictvec$fitmean/sum(predictvec$fitmean,na.rm=T)*E*S #Old calculation of density. Exactly 1:1 match with new calculation above 10/22/15 - EAH
+  
+  #UPPER AND LOWER ESIMATES FOR PROBABLY OF OCCURRENCE!!!!
   predictvec$upper<-100*(predictvec$fitmean+predictvec$sdfit)
   predictvec$lower<-100*(predictvec$fitmean-predictvec$sdfit)
   predictvec$lower[predictvec$lower<0]<-0
+  
+  #UPPER AND LOWER ESIMATES FOR DENSITY!!!!
+  #Do upper and lower ranges for density
+  #predictvec$upper<-predictvec$density+predictvec$sddens
+  #predictvec$lower<-predictvec$density-predictvec$sddens
+  #predictvec$lower[predictvec$lower<0]<-0
   
   #Write a .csv file with all data if desired for comparisons
   logprint(paste("Writing predictions to file",predictfile))
