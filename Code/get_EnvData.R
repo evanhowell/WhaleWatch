@@ -54,7 +54,7 @@ get_EnvData <- function() {
   initialtime = "last" #use this to get the last available ERDDAP file
   
   #For debugging you can enter in a specific ERDDAP time in the format 2015-04-16T00:00:00Z
-  #initialtime = "2009-04-16T00:00:00Z" #use this to get the last available ERDDAP file
+  #initialtime = "2015-10-16T00:00:00Z" #use this to get the last available ERDDAP file
   
   #Call ERDDAP to get the date of "latest" chlorophyll file
   dapurl="http://coastwatch.pfeg.noaa.gov/erddap/tabledap/allDatasets.csv0?maxTime&datasetID=%22erdMBchlamday%22"

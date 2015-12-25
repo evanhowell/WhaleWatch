@@ -1,3 +1,5 @@
+#Version 1.0 - Original release with four calls to plot_GAM...
+#Versoin 1.1 - Plot_GAMMRaster changed to make one four panel plot, so call to that function changed in here - EAH 12/24/15 
 #uncomment for batch mode. Comment for testing
 #Start "cd C:\path\bin\Rgui.exe CMD BATCH C:\path\WhaleWatch_Run.r"
 
@@ -41,21 +43,8 @@ logprint("Finished running function predict_GAMM")
 #Now run function to make the plots
 logprint("Running function plot_GAMMRaster")
 
-#First plot Lower range
+#Make four panel plot
 plot_GAMMRaster(predictvec)
-
-#now plot percent Average prediction
-imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Density=predictvec$density,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec, "Average")
-
-#Now plot Upper range
-imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,Upper=predictvec$upper,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec, "Upper Estimate")
-
-
-#now plot SD
-imagevec = data.frame(longitude=predictvec$longitude,latitude=predictvec$latitude,SD=predictvec$sddens,month=predictvec$month,year=predictvec$year)
-plot_GAMMRaster(imagevec, "Standard Deviation")
 logprint("Finished running function plot_GAMMRaster")
 
 #Close up temp logfile, then rename logfile from templog to dated logfile
