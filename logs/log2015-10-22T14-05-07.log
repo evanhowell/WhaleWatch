@@ -1,0 +1,99 @@
+[1] "2015-10-22 13:58:47: Starting operations to make WhaleWatch product"
+[1] "2015-10-22 13:58:47: Bathymetry data present, moving to next command"
+[1] "2015-10-22 13:58:52: Running function get_EnvData"
+[1] "2015-10-22 13:58:52: Loading required libraries"
+
+  There is a binary version available but the source version is later:
+           binary source needs_compilation
+adehabitat 1.8.17 1.8.18              TRUE
+
+
+The downloaded binary packages are in
+	/var/folders/_v/2sw2z0fj7x375t324c9bj42m0000gp/T//RtmpQTJJsa/downloaded_packages
+Warning in install.packages :
+  dependency ‘Rcompression’ is not available
+
+The downloaded binary packages are in
+	/var/folders/_v/2sw2z0fj7x375t324c9bj42m0000gp/T//RtmpQTJJsa/downloaded_packages
+
+The downloaded binary packages are in
+	/var/folders/_v/2sw2z0fj7x375t324c9bj42m0000gp/T//RtmpQTJJsa/downloaded_packages
+[1] "2015-10-22 13:59:33: Getting the current month and year..."
+[1] "2015-10-22 13:59:33: Creating temp directory tmp.1445561973"
+[1] "2015-10-22 13:59:34: Checking for existence of factor file Data/WhaleWatchFactors_2015_09.csv"
+[1] "2015-10-22 13:59:34: Factorfile not found, grabbing data"
+[1] "2015-10-22 13:59:34: Attempting to grab Chlorophyll using http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMBchlamday.nc?chlorophyll[(last)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]"
+[1] "2015-10-22 13:59:43: Chlorophyll data file download successful!!!"
+[1] "2015-10-22 13:59:43: Reading in chlorophyll data file tmp.1445561973/chl.nc"
+[1] "2015-10-22 13:59:46: Attempting SST download http://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMBsstdmday.nc?sst[(2015-09-16T00:00:00Z):1:(2015-09-16T00:00:00Z)][(0.0):1:(0.0)][(29):1:(49)][(224):1:(245)]"
+[1] "2015-10-22 14:00:02: Attempting SSH download http://aviso-users:grid2010@opendap.aviso.altimetry.fr/thredds/dodsC/dataset-duacs-nrt-over30d-global-allsat-msla-h"
+[1] "2015-10-22 14:00:18: Regridding SSH to mastergrid"
+[1] "2015-10-22 14:00:19: Calculating SD for SSH raster"
+[1] "2015-10-22 14:00:19: Loading in reshaped SST and Chl-a data"
+[1] "2015-10-22 14:00:19: Writing factorfile to file Data/WhaleWatchFactors_2015_09.csv"
+[1] "2015-10-22 14:00:19: Cleaning up temp directory tmp.1445561973"
+[1] "2015-10-22 14:00:24: Running function get_EnvData"
+[1] "2015-10-22 14:00:24: Loading required libraries"
+[1] "2015-10-22 14:00:24: Getting the current month and year..."
+[1] "2015-10-22 14:00:24: Creating temp directory tmp.1445562024"
+[1] "2015-10-22 14:00:26: Checking for existence of factor file Data/WhaleWatchFactors_2015_09.csv"
+[1] "2015-10-22 14:00:26: Factor file Data/WhaleWatchFactors_2015_09.csv present, moving to modeling phase"
+[1] "2015-10-22 14:00:26: Cleaning up temp directory tmp.1445562024"
+[1] "2015-10-22 14:00:26: Finished running function get_EnvData"
+[1] "2015-10-22 14:02:41: Running function predict_GAMM"
+[1] "2015-10-22 14:02:41: Loading factor file Data/WhaleWatchFactors_2015_09.csv"
+[1] "2015-10-22 14:02:42: loading model ModelRuns/bwhaleGAMM.sufa1.RData"
+[1] "2015-10-22 14:02:43: loading model ModelRuns/bwhaleGAMM.sufa2.RData"
+[1] "2015-10-22 14:02:45: loading model ModelRuns/bwhaleGAMM.sufa3.RData"
+[1] "2015-10-22 14:02:46: loading model ModelRuns/bwhaleGAMM.sufa4.RData"
+[1] "2015-10-22 14:02:48: loading model ModelRuns/bwhaleGAMM.sufa5.RData"
+[1] "2015-10-22 14:02:50: loading model ModelRuns/bwhaleGAMM.sufa6.RData"
+[1] "2015-10-22 14:02:51: loading model ModelRuns/bwhaleGAMM.sufa7.RData"
+[1] "2015-10-22 14:02:53: loading model ModelRuns/bwhaleGAMM.sufa8.RData"
+[1] "2015-10-22 14:02:54: loading model ModelRuns/bwhaleGAMM.sufa9.RData"
+[1] "2015-10-22 14:02:56: loading model ModelRuns/bwhaleGAMM.sufa10.RData"
+[1] "2015-10-22 14:02:57: loading model ModelRuns/bwhaleGAMM.sufa11.RData"
+[1] "2015-10-22 14:02:59: loading model ModelRuns/bwhaleGAMM.sufa12.RData"
+[1] "2015-10-22 14:03:00: loading model ModelRuns/bwhaleGAMM.sufa13.RData"
+[1] "2015-10-22 14:03:02: loading model ModelRuns/bwhaleGAMM.sufa14.RData"
+[1] "2015-10-22 14:03:03: loading model ModelRuns/bwhaleGAMM.sufa15.RData"
+[1] "2015-10-22 14:03:05: loading model ModelRuns/bwhaleGAMM.sufa16.RData"
+[1] "2015-10-22 14:03:06: loading model ModelRuns/bwhaleGAMM.sufa17.RData"
+[1] "2015-10-22 14:03:08: loading model ModelRuns/bwhaleGAMM.sufa18.RData"
+[1] "2015-10-22 14:03:09: loading model ModelRuns/bwhaleGAMM.sufa19.RData"
+[1] "2015-10-22 14:03:11: loading model ModelRuns/bwhaleGAMM.sufa20.RData"
+[1] "2015-10-22 14:03:12: loading model ModelRuns/bwhaleGAMM.sufa21.RData"
+[1] "2015-10-22 14:03:14: loading model ModelRuns/bwhaleGAMM.sufa22.RData"
+[1] "2015-10-22 14:03:15: loading model ModelRuns/bwhaleGAMM.sufa23.RData"
+[1] "2015-10-22 14:03:17: loading model ModelRuns/bwhaleGAMM.sufa24.RData"
+[1] "2015-10-22 14:03:18: loading model ModelRuns/bwhaleGAMM.sufa25.RData"
+[1] "2015-10-22 14:03:20: loading model ModelRuns/bwhaleGAMM.sufa26.RData"
+[1] "2015-10-22 14:03:21: loading model ModelRuns/bwhaleGAMM.sufa27.RData"
+[1] "2015-10-22 14:03:23: loading model ModelRuns/bwhaleGAMM.sufa28.RData"
+[1] "2015-10-22 14:03:24: loading model ModelRuns/bwhaleGAMM.sufa29.RData"
+[1] "2015-10-22 14:03:26: loading model ModelRuns/bwhaleGAMM.sufa30.RData"
+[1] "2015-10-22 14:03:27: loading model ModelRuns/bwhaleGAMM.sufa31.RData"
+[1] "2015-10-22 14:03:29: loading model ModelRuns/bwhaleGAMM.sufa32.RData"
+[1] "2015-10-22 14:03:31: loading model ModelRuns/bwhaleGAMM.sufa33.RData"
+[1] "2015-10-22 14:03:32: loading model ModelRuns/bwhaleGAMM.sufa34.RData"
+[1] "2015-10-22 14:03:34: loading model ModelRuns/bwhaleGAMM.sufa35.RData"
+[1] "2015-10-22 14:03:35: loading model ModelRuns/bwhaleGAMM.sufa36.RData"
+[1] "2015-10-22 14:03:37: loading model ModelRuns/bwhaleGAMM.sufa37.RData"
+[1] "2015-10-22 14:03:38: loading model ModelRuns/bwhaleGAMM.sufa38.RData"
+[1] "2015-10-22 14:03:40: loading model ModelRuns/bwhaleGAMM.sufa39.RData"
+[1] "2015-10-22 14:03:41: loading model ModelRuns/bwhaleGAMM.sufa40.RData"
+[1] "2015-10-22 14:03:43: Making GAM data frame"
+[1] "2015-10-22 14:03:43: Writing predictions to file Predictions/WhaleWatchPredictions_2015_09.csv"
+[1] "2015-10-22 14:03:43: Finished running function predict_GAMM"
+[1] "2015-10-22 14:03:53: Running function plot_GAMMRaster"
+null device 
+          1 
+null device 
+          1 
+null device 
+          1 
+null device 
+          1 
+[1] "2015-10-22 14:05:07: Finished running function plot_GAMMRaster"
+[1] "2015-10-22 14:05:07: Closing temporary logfile and renaming to file  logs/log2015-10-22T14-05-07.log"
+[1] "2015-10-22 14:05:07: DONE!!!! Check Images, Data, and Predictions directories"
